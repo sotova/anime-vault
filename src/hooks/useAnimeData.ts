@@ -1,60 +1,89 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { Anime, UserAnimeData, HybridAnime } from '@/types/anime';
 
 const LOCAL_DB_KEY = 'anime_db';
 const USER_DATA_KEY = 'anime_user_data';
 
-function loadLocal<T>(key: string, fallback: T): T {
-  if (typeof window === 'undefined') return fallback;
-  try { return JSON.parse(localStorage.getItem(key) || '') as T; } catch { return fallback; }
+interface AnimeContextType {
+  animeList: HybridAnime[];
+  rawAnimeList: Anime[];
+  loading: boolean;
+  upsertAnime: (anime: Anime) => Promise<void>;
+  bulkUpsert: (list: Anime[]) => Promise<void>;
+  deleteAnime: (id: string) => Promise<void>;
+  updateUserData: (animeId: string, updates: Partial<UserAnimeData>) => void;
+  exportUserData: () => void;
+  importUserData: (json: string) => boolean;
+  refresh: () => Promise<void>;
 }
 
-export function useAnimeData() {
+const AnimeContext = createContext<AnimeContextType | undefined>(undefined);
+
+function loadLocal<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : fallback;
+  } catch { return fallback; }
+}
+
+export function AnimeProvider({ children }: { children: React.ReactNode }) {
   const [animeList, setAnimeList] = useState<Anime[]>([]);
   const [userData, setUserData] = useState<Record<string, UserAnimeData>>({});
   const [loading, setLoading] = useState(true);
 
-  // --- Load ---
   const fetchAnime = useCallback(async () => {
     setLoading(true);
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase.from('anime').select('*').order('created_at', { ascending: false });
-        if (!error && data) { setAnimeList(data); setLoading(false); return; }
-      } catch {}
+        if (!error && data) {
+          setAnimeList(data);
+          localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(data));
+          setLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.error('Supabase fetch failed, falling back to local', e);
+      }
     }
     setAnimeList(loadLocal<Anime[]>(LOCAL_DB_KEY, []));
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchAnime(); }, [fetchAnime]);
-  useEffect(() => { setUserData(loadLocal<Record<string, UserAnimeData>>(USER_DATA_KEY, {})); }, []);
+  useEffect(() => {
+    fetchAnime();
+    setUserData(loadLocal<Record<string, UserAnimeData>>(USER_DATA_KEY, {}));
+  }, [fetchAnime]);
 
-  // --- Persist user data ---
-  useEffect(() => { if (!loading) localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData)); }, [userData, loading]);
-  // --- Persist local anime db as backup ---
-  useEffect(() => { if (!loading) localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(animeList)); }, [animeList, loading]);
+  useEffect(() => {
+    if (!loading) {
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+    }
+  }, [userData, loading]);
 
-  // --- Merged data ---
-  const hybridData: HybridAnime[] = animeList.map((a) => ({ ...a, userData: userData[a.id] }));
-
-  // --- Upsert anime ---
   const upsertAnime = async (anime: Anime) => {
     if (isSupabaseConfigured && supabase) {
       const { error } = await supabase.from('anime').upsert([anime]);
-      if (error) { console.error('Supabase upsert error:', error); }
+      if (error) console.error('Supabase upsert error:', error);
     }
     setAnimeList((prev) => {
       const idx = prev.findIndex((a) => a.id === anime.id);
-      if (idx >= 0) { const u = [...prev]; u[idx] = anime; return u; }
-      return [anime, ...prev];
+      let newList;
+      if (idx >= 0) {
+        newList = [...prev];
+        newList[idx] = anime;
+      } else {
+        newList = [anime, ...prev];
+      }
+      localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(newList));
+      return newList;
     });
   };
 
-  // --- Bulk upsert (XLSX) ---
   const bulkUpsert = async (list: Anime[]) => {
     if (isSupabaseConfigured && supabase) {
       await supabase.from('anime').upsert(list);
@@ -62,20 +91,28 @@ export function useAnimeData() {
     setAnimeList((prev) => {
       const map = new Map(prev.map((a) => [a.id, a]));
       list.forEach((a) => map.set(a.id, a));
-      return Array.from(map.values());
+      const newList = Array.from(map.values());
+      localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(newList));
+      return newList;
     });
   };
 
-  // --- Delete anime ---
   const deleteAnime = async (id: string) => {
     if (isSupabaseConfigured && supabase) {
       await supabase.from('anime').delete().eq('id', id);
     }
-    setAnimeList((prev) => prev.filter((a) => a.id !== id));
-    setUserData((prev) => { const c = { ...prev }; delete c[id]; return c; });
+    setAnimeList((prev) => {
+      const newList = prev.filter((a) => a.id !== id);
+      localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(newList));
+      return newList;
+    });
+    setUserData((prev) => {
+      const c = { ...prev };
+      delete c[id];
+      return c;
+    });
   };
 
-  // --- Update user data ---
   const updateUserData = (animeId: string, updates: Partial<UserAnimeData>) => {
     setUserData((prev) => ({
       ...prev,
@@ -83,7 +120,6 @@ export function useAnimeData() {
     }));
   };
 
-  // --- Export user data ---
   const exportUserData = () => {
     const blob = new Blob([JSON.stringify(userData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -91,12 +127,17 @@ export function useAnimeData() {
     URL.revokeObjectURL(url);
   };
 
-  // --- Import user data ---
   const importUserData = (json: string) => {
-    try { setUserData(JSON.parse(json)); return true; } catch { return false; }
+    try {
+      const data = JSON.parse(json);
+      setUserData(data);
+      return true;
+    } catch { return false; }
   };
 
-  return {
+  const hybridData: HybridAnime[] = animeList.map((a) => ({ ...a, userData: userData[a.id] }));
+
+  const value = {
     animeList: hybridData,
     rawAnimeList: animeList,
     loading,
@@ -108,4 +149,14 @@ export function useAnimeData() {
     importUserData,
     refresh: fetchAnime,
   };
+
+  return <AnimeContext.Provider value={value}>{children}</AnimeContext.Provider>;
+}
+
+export function useAnimeData() {
+  const context = useContext(AnimeContext);
+  if (context === undefined) {
+    throw new Error('useAnimeData must be used within an AnimeProvider');
+  }
+  return context;
 }

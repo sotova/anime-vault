@@ -14,11 +14,11 @@ export function Sidebar() {
 
   return (
     <aside style={{
-      width: '140px',
+      width: '160px', // 幅を少し広げた
       minHeight: '100vh',
       background: '#111',
       borderRight: '1px solid #333',
-      padding: '24px 16px',
+      padding: '24px 12px',
       display: 'flex',
       flexDirection: 'column',
       gap: '8px',
@@ -34,6 +34,7 @@ export function Sidebar() {
         color: '#d4a843',
         marginBottom: '32px',
         lineHeight: '1.2',
+        textAlign: 'center',
       }}>
         Anime<br />Manager
       </div>
@@ -46,7 +47,7 @@ export function Sidebar() {
             href={item.href}
             style={{
               display: 'block',
-              padding: '10px 14px',
+              padding: '12px 8px',
               borderRadius: '6px',
               fontSize: '14px',
               fontWeight: 'bold',
@@ -55,7 +56,10 @@ export function Sidebar() {
               textDecoration: 'none',
               transition: 'all 0.2s',
               textAlign: 'center',
-              letterSpacing: '2px',
+              letterSpacing: '1px',
+              whiteSpace: 'nowrap', // 改行を防ぐ
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
             }}
           >
             {item.label}
