@@ -27,7 +27,11 @@ export default function HomePage() {
       {watching.length > 0 && (
         <Section title="視聴中の作品" href="/library">
           <HorizontalScroll>
-            {watching.map((a, i) => <div key={a.id} style={{ minWidth: '180px' }}><AnimeCard anime={a} showProgress index={i} /></div>)}
+            {watching.map((a, i) => (
+              <div key={a.id} style={{ width: '160px', flexShrink: 0 }}>
+                <AnimeCard anime={a} showProgress index={i} />
+              </div>
+            ))}
           </HorizontalScroll>
         </Section>
       )}
@@ -36,7 +40,11 @@ export default function HomePage() {
       <Section title="今季アニメ" href="/anime">
         {seasonal.length > 0 ? (
           <HorizontalScroll>
-            {seasonal.map((a, i) => <div key={a.id} style={{ minWidth: '180px' }}><AnimeCard anime={a} index={i} /></div>)}
+            {seasonal.map((a, i) => (
+              <div key={a.id} style={{ width: '160px', flexShrink: 0 }}>
+                <AnimeCard anime={a} index={i} />
+              </div>
+            ))}
           </HorizontalScroll>
         ) : <EmptyState text="まだ作品が登録されていません。「管理」から追加してください。" />}
       </Section>
@@ -45,7 +53,11 @@ export default function HomePage() {
       <Section title="あなたにおすすめ" href="/anime">
         {recommended.length > 0 ? (
           <HorizontalScroll>
-            {recommended.map((a, i) => <div key={a.id} style={{ minWidth: '180px' }}><AnimeCard anime={a} index={i} /></div>)}
+            {recommended.map((a, i) => (
+              <div key={a.id} style={{ width: '160px', flexShrink: 0 }}>
+                <AnimeCard anime={a} index={i} />
+              </div>
+            ))}
           </HorizontalScroll>
         ) : <EmptyState text="作品を登録すると、おすすめがここに表示されます。" />}
       </Section>
@@ -59,9 +71,13 @@ function Section({ title, children, href }: { title: string; children: React.Rea
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}
       style={{ marginBottom: '48px' }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '0 48px', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '22px', fontWeight: 'bold' }}>{title}</h2>
-        {href && <Link href={href} style={{ fontSize: '13px', color: '#d4a843', textDecoration: 'none', fontWeight: 'bold' }}>すべて表示 →</Link>}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 48px', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#fff' }}>{title}</h2>
+        {href && (
+          <Link href={href} style={{ fontSize: '13px', color: '#d4a843', textDecoration: 'none', fontWeight: 'bold' }}>
+            すべて表示 →
+          </Link>
+        )}
       </div>
       {children}
     </motion.section>
@@ -70,14 +86,21 @@ function Section({ title, children, href }: { title: string; children: React.Rea
 
 function HorizontalScroll({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ 
-      display: 'flex', gap: '20px', overflowX: 'auto', padding: '10px 48px 20px', 
-      scrollbarWidth: 'none', msOverflowStyle: 'none' 
-    }}>
-      <style>{`
-        div::-webkit-scrollbar { display: none; }
-      `}</style>
-      {children}
+    <div style={{ position: 'relative' }}>
+      <div style={{ 
+        display: 'flex', 
+        gap: '20px', 
+        overflowX: 'auto', 
+        padding: '10px 48px 20px', 
+        scrollbarWidth: 'none', 
+        msOverflowStyle: 'none',
+        scrollBehavior: 'smooth'
+      }}>
+        <style>{`
+          div::-webkit-scrollbar { display: none; }
+        `}</style>
+        {children}
+      </div>
     </div>
   );
 }

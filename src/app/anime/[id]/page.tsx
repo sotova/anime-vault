@@ -8,7 +8,6 @@ import { AnimeStatus } from '@/types/anime';
 import { motion } from 'framer-motion';
 import { useMemo } from 'react';
 
-// YouTubeのIDを抽出するユーティリティ
 function getYouTubeId(url: string) {
   if (!url) return null;
   let videoId = '';
@@ -114,14 +113,14 @@ export default function AnimeDetailPage() {
           </div>
         </motion.div>
 
-        {/* Right: Video / Poster */}
+        {/* Right: Media */}
         <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
           <div style={{ aspectRatio: '16/9', background: '#000', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.6)', position: 'relative' }}>
             {videoId ? (
               <iframe
                 width="100%"
                 height="100%"
-                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0&controls=1&modestbranding=1`}
+                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0&controls=1`}
                 title={anime.title}
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -135,9 +134,25 @@ export default function AnimeDetailPage() {
               </div>
             )}
           </div>
-          <div style={{ marginTop: '20px', display: 'flex', gap: '32px', padding: '0 8px' }}>
-             <div><div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>放送時期</div><div style={{ fontSize: '15px', color: '#eee' }}>{anime.season || '不明'}</div></div>
-             <div><div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>話数</div><div style={{ fontSize: '15px', color: '#eee' }}>全 {anime.total_episodes || '??'} 話</div></div>
+          
+          <div style={{ marginTop: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', padding: '0 8px' }}>
+             <div><div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>放送時期</div><div style={{ fontSize: '14px', color: '#eee' }}>{anime.season || '不明'}</div></div>
+             <div><div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>話数</div><div style={{ fontSize: '14px', color: '#eee' }}>全 {anime.total_episodes || '??'} 話</div></div>
+             
+             {anime.official_site && (
+               <div style={{ gridColumn: 'span 2' }}>
+                 <div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>公式サイト</div>
+                 <a href={anime.official_site} target="_blank" rel="noopener noreferrer" style={{ fontSize: '14px', color: '#d4a843', textDecoration: 'none' }}>
+                   {anime.official_site}
+                 </a>
+               </div>
+             )}
+
+             {anime.copyright && (
+               <div style={{ gridColumn: 'span 2' }}>
+                 <div style={{ fontSize: '10px', color: '#444' }}>{anime.copyright}</div>
+               </div>
+             )}
           </div>
         </motion.div>
       </div>
@@ -147,7 +162,7 @@ export default function AnimeDetailPage() {
           <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '24px', color: '#d4a843', paddingBottom: '8px', borderBottom: '1px solid #222' }}>
             この作品を見た人におすすめ
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '24px' }}>
             {similar.map((a, i) => (
               <AnimeCard key={a.id} anime={a} index={i} />
             ))}

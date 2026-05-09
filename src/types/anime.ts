@@ -9,6 +9,8 @@ export interface Anime {
   image_url: string;
   season: string;
   total_episodes: number;
+  official_site?: string; // 公式サイト
+  copyright?: string;    // コピーライト
   created_at?: string;
 }
 

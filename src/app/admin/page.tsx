@@ -15,25 +15,41 @@ const inputStyle: React.CSSProperties = {
 
 export default function AdminPage() {
   const { rawAnimeList, upsertAnime, bulkUpsert, deleteAnime } = useAnimeData();
-  const [form, setForm] = useState({ id: '', title: '', season: '', synopsis: '', image_url: '', pv_url: '', tags: [] as string[], total_episodes: 0 });
+  const [form, setForm] = useState<Partial<Anime>>({ 
+    id: '', title: '', season: '', synopsis: '', image_url: '', pv_url: '', 
+    tags: [], total_episodes: 0, official_site: '', copyright: '' 
+  });
   const [tagInput, setTagInput] = useState('');
   const [msg, setMsg] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
   const [adminSearch, setAdminSearch] = useState('');
 
-  const resetForm = () => { setForm({ id: '', title: '', season: '', synopsis: '', image_url: '', pv_url: '', tags: [], total_episodes: 0 }); setTagInput(''); setEditId(null); };
+  const resetForm = () => { 
+    setForm({ 
+      id: '', title: '', season: '', synopsis: '', image_url: '', pv_url: '', 
+      tags: [], total_episodes: 0, official_site: '', copyright: '' 
+    }); 
+    setTagInput(''); setEditId(null); 
+  };
 
   const handleSave = async () => {
-    if (!form.title.trim()) { setMsg('タイトルを入力してください。'); return; }
-    const anime: Anime = { ...form, id: form.id || genId(), created_at: new Date().toISOString() };
+    if (!form.title?.trim()) { setMsg('タイトルを入力してください。'); return; }
+    const anime: Anime = { 
+      ...form, 
+      id: form.id || genId(), 
+      tags: form.tags || [],
+      total_episodes: form.total_episodes || 0,
+      created_at: new Date().toISOString() 
+    } as Anime;
+    
     await upsertAnime(anime);
-    setMsg(editId ? '更新しました！' : '追加しました！');
+    setMsg(editId ? 'クラウドとローカルを更新しました！' : 'クラウドに保存しました！');
     resetForm();
-    setTimeout(() => setMsg(''), 3000);
+    setTimeout(() => setMsg(''), 4000);
   };
 
   const handleEdit = (a: Anime) => {
-    setForm({ id: a.id, title: a.title, season: a.season, synopsis: a.synopsis, image_url: a.image_url, pv_url: a.pv_url, tags: a.tags, total_episodes: a.total_episodes });
+    setForm({ ...a });
     setEditId(a.id);
     setMsg('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -71,22 +87,22 @@ export default function AdminPage() {
         };
         return {
           id: genId(),
-          title: getVal(['タイトル', 'title', 'Title', '名前']),
-          season: getVal(['放送季', 'season', 'Season', '時期', '年代']),
-          synopsis: getVal(['あらすじ', 'synopsis', 'Synopsis', '概要', '説明']),
-          image_url: getVal(['画像', 'image_url', 'image', 'Image', '画像URL', 'ポスター', 'イメージ']),
-          pv_url: getVal(['PV', 'pv_url', 'PV URL', 'youtube', 'YouTube', '動画']),
-          tags: getVal(['タグ', 'tags', 'Tags', 'ジャンル']).split(/[、,]/).map((t) => t.trim()).filter(Boolean),
-          total_episodes: parseInt(getVal(['話数', 'total_episodes', 'episodes', '話'])) || 0,
+          title: getVal(['タイトル', 'title', '名前']),
+          season: getVal(['放送季', 'season', '時期']),
+          synopsis: getVal(['あらすじ', 'synopsis', '概要']),
+          image_url: getVal(['画像', 'image_url', 'ポスター']),
+          pv_url: getVal(['PV', 'pv_url', '動画']),
+          official_site: getVal(['公式サイト', 'url', 'site']),
+          copyright: getVal(['コピーライト', 'copyright', '©']),
+          tags: getVal(['タグ', 'tags']).split(/[、,]/).map((t) => t.trim()).filter(Boolean),
+          total_episodes: parseInt(getVal(['話数', 'episodes'])) || 0,
           created_at: new Date().toISOString(),
         };
       }).filter((a) => a.title);
 
       if (animes.length > 0) {
         await bulkUpsert(animes);
-        setMsg(`${animes.length} 件を一括追加しました！`);
-      } else {
-        setMsg('データが見つかりませんでした。');
+        setMsg(`${animes.length} 件をクラウドに一括登録しました！`);
       }
       setTimeout(() => setMsg(''), 3000);
     };
@@ -100,20 +116,27 @@ export default function AdminPage() {
         style={{ background: '#2a2a2a', borderRadius: '16px', padding: '32px', marginBottom: '40px' }}
       >
         <h2 style={{ fontSize: '20px', color: '#d4a843', marginBottom: '20px' }}>
-          {editId ? '✏️ 作品を編集' : '＋ 新規追加'}
+          {editId ? '✏️ 作品を編集 (クラウド同期)' : '＋ 新規登録 (クラウド保存)'}
         </h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '24px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <input style={inputStyle} placeholder="アニメのタイトルを入力" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-            <input style={inputStyle} placeholder="放送季 (例: 2025年 春)" value={form.season} onChange={(e) => setForm({ ...form, season: e.target.value })} />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <input style={inputStyle} placeholder="放送季 (例: 2025年 春)" value={form.season} onChange={(e) => setForm({ ...form, season: e.target.value })} />
+              <input style={{ ...inputStyle, width: '120px' }} type="number" placeholder="総話数" value={form.total_episodes || ''} onChange={(e) => setForm({ ...form, total_episodes: parseInt(e.target.value) || 0 })} />
+            </div>
             <textarea style={{ ...inputStyle, minHeight: '110px', resize: 'vertical' }} placeholder="アニメのあらすじを入力" value={form.synopsis} onChange={(e) => setForm({ ...form, synopsis: e.target.value })} />
+            <div style={{ display: 'flex', gap: '10px' }}>
+               <input style={inputStyle} placeholder="公式サイト URL" value={form.official_site} onChange={(e) => setForm({ ...form, official_site: e.target.value })} />
+               <input style={inputStyle} placeholder="コピーライト (© 委員会など)" value={form.copyright} onChange={(e) => setForm({ ...form, copyright: e.target.value })} />
+            </div>
             <input style={inputStyle} placeholder="タグ (Enterで追加)" value={tagInput} onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && tagInput.trim()) { e.preventDefault(); setForm({ ...form, tags: [...form.tags, tagInput.trim()] }); setTagInput(''); } }} />
-            {form.tags.length > 0 && (
+              onKeyDown={(e) => { if (e.key === 'Enter' && tagInput.trim()) { e.preventDefault(); setForm({ ...form, tags: [...(form.tags || []), tagInput.trim()] }); setTagInput(''); } }} />
+            {(form.tags || []).length > 0 && (
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {form.tags.map((t, i) => (
+                {form.tags!.map((t, i) => (
                   <span key={i} style={{ background: '#444', color: '#eee', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    #{t} <button onClick={() => setForm({ ...form, tags: form.tags.filter((_, idx) => idx !== i) })} style={{ background: 'none', border: 'none', color: '#999', cursor: 'pointer' }}>×</button>
+                    #{t} <button onClick={() => setForm({ ...form, tags: form.tags!.filter((_, idx) => idx !== i) })} style={{ background: 'none', border: 'none', color: '#999', cursor: 'pointer' }}>×</button>
                   </span>
                 ))}
               </div>
@@ -122,20 +145,19 @@ export default function AdminPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ background: '#111', border: '1px solid #333', borderRadius: '10px', aspectRatio: '3/4', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {form.image_url ? <img src={form.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> :
-                <span style={{ color: '#666', fontSize: '12px', textAlign: 'center' }}>アニメの画像を<br />挿入</span>}
+                <span style={{ color: '#666', fontSize: '12px', textAlign: 'center' }}>プレビュー</span>}
             </div>
-            <input style={inputStyle} placeholder="画像URL" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
-            <input style={inputStyle} placeholder="PV URL (YouTube等)" value={form.pv_url} onChange={(e) => setForm({ ...form, pv_url: e.target.value })} />
-            <input style={inputStyle} type="number" placeholder="総話数" value={form.total_episodes || ''} onChange={(e) => setForm({ ...form, total_episodes: parseInt(e.target.value) || 0 })} />
+            <input style={inputStyle} placeholder="画像 URL" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
+            <input style={inputStyle} placeholder="PV URL (YouTube)" value={form.pv_url} onChange={(e) => setForm({ ...form, pv_url: e.target.value })} />
           </div>
         </div>
         <div style={{ marginTop: '20px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <button onClick={handleSave} style={{ padding: '12px 36px', background: '#d4a843', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
-            {editId ? '更新する' : '追加する'}
+            {editId ? 'クラウドを更新' : 'クラウドに保存'}
           </button>
           {editId && <button onClick={resetForm} style={{ padding: '12px 24px', background: '#444', color: '#ccc', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>キャンセル</button>}
           <label style={{ padding: '12px 24px', background: '#333', border: '1px solid #555', borderRadius: '8px', color: '#ccc', fontSize: '13px', cursor: 'pointer' }}>
-            📄 XLSXインポート
+            📄 XLSX 一括登録
             <input type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleXlsx} />
           </label>
           {msg && <span style={{ color: '#22c55e', fontSize: '14px', fontWeight: 'bold' }}>{msg}</span>}
@@ -143,10 +165,10 @@ export default function AdminPage() {
       </motion.div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '20px', color: '#d4a843' }}>登録済み作品 ({rawAnimeList.length})</h2>
+        <h2 style={{ fontSize: '20px', color: '#d4a843' }}>クラウド登録済み作品 ({rawAnimeList.length})</h2>
         <input 
           style={{ ...inputStyle, width: '300px', padding: '8px 12px' }} 
-          placeholder="登録済み作品を検索..." 
+          placeholder="作品を検索..." 
           value={adminSearch} 
           onChange={(e) => setAdminSearch(e.target.value)} 
         />
@@ -168,9 +190,6 @@ export default function AdminPage() {
             </motion.div>
           ))}
         </AnimatePresence>
-        {filteredList.length === 0 && (
-          <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>見つかりませんでした。</div>
-        )}
       </div>
     </div>
   );
