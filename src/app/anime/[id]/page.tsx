@@ -8,7 +8,8 @@ import { AnimeStatus } from '@/types/anime';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 
-const ReactPlayer = dynamic(() => import('react-player/lazy'), { ssr: false }) as any;
+// 'react-player/lazy' ではなく 'react-player' を使用
+const ReactPlayer = dynamic(() => import('react-player'), { ssr: false }) as any;
 
 export default function AnimeDetailPage() {
   const { id } = useParams();
@@ -42,7 +43,6 @@ export default function AnimeDetailPage() {
             {anime.synopsis || 'あらすじはまだ登録されていません。'}
           </p>
 
-          {/* Tags */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
             {anime.tags.map((tag) => (
               <span key={tag} style={{ padding: '6px 16px', border: '1px solid #555', borderRadius: '6px', fontSize: '13px', color: '#ccc' }}>#{tag}</span>
@@ -102,10 +102,9 @@ export default function AnimeDetailPage() {
                 height="100%"
                 config={{
                   youtube: {
-                    playerVars: { showinfo: 1, rel: 0, autoplay: 1, mute: 1 }
+                    playerVars: { autoplay: 1, mute: 1, rel: 0 }
                   }
                 }}
-                onError={(e: any) => console.error("Player Error:", e)}
               />
             ) : anime.image_url ? (
               <img src={anime.image_url} alt={anime.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
