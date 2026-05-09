@@ -80,7 +80,8 @@ export function AnimeCard({ anime, showProgress = false, index = 0 }: AnimeCardP
             {/* Info Overlay */}
             <div style={{
               position: 'absolute', bottom: 0, left: 0, width: '100%',
-              padding: '12px', zIndex: 3, display: 'flex', flexDirection: 'column', gap: '4px'
+              padding: '12px', zIndex: 3, display: 'flex', flexDirection: 'column', gap: '4px',
+              boxSizing: 'border-box'
             }}>
               <div style={{
                 fontSize: '13px', fontWeight: 'bold', color: '#fff',
@@ -104,10 +105,10 @@ export function AnimeCard({ anime, showProgress = false, index = 0 }: AnimeCardP
 
               {/* Progress Bar (Watching only) */}
               {showProgress && status === '視聴中' && total > 0 && (
-                <div style={{ height: '3px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', overflow: 'hidden', marginTop: '2px' }}>
+                <div style={{ width: '100%', height: '3px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', overflow: 'hidden', marginTop: '2px' }}>
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${Math.min((progress / total) * 100, 100)}%` }}
+                    animate={{ width: `${Math.min(Math.max((progress / total) * 100, 0), 100)}%` }}
                     style={{ height: '100%', background: '#d4a843' }}
                   />
                 </div>

@@ -59,9 +59,10 @@ function CarouselSection({ title, children, href }: { title: string; children: R
 
   useEffect(() => {
     checkScroll();
-    window.addEventListener('resize', checkScroll);
-    return () => window.removeEventListener('resize', checkScroll);
-  }, []);
+    const handleResize = () => checkScroll();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [children]);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -80,7 +81,7 @@ function CarouselSection({ title, children, href }: { title: string; children: R
 
       <div style={{ position: 'relative', width: '100%' }} onMouseEnter={checkScroll}>
         
-        {/* Left Gradient & Button */}
+        {/* Left Gradient & Button (Only show when scrolled) */}
         {canScroll.left && (
           <div style={{ 
             position: 'absolute', left: 0, top: 0, bottom: 0, width: '100px', 
@@ -122,7 +123,8 @@ function CarouselSection({ title, children, href }: { title: string; children: R
             overflowX: 'auto', 
             padding: '10px 60px 30px',
             scrollSnapType: 'x proximity',
-            scrollBehavior: 'smooth'
+            scrollBehavior: 'smooth',
+            scrollPaddingLeft: '60px' // Align snap to the padding
           }}
         >
           {children}
