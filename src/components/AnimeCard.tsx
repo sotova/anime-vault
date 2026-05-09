@@ -32,77 +32,84 @@ export function AnimeCard({ anime, showProgress = false, index = 0 }: AnimeCardP
     >
       <Link href={`/anime/${anime.id}`} style={{ textDecoration: 'none' }}>
         <motion.div
-          whileHover={{ scale: 1.05, boxShadow: '0 8px 24px rgba(212,168,67,0.25)' }}
-          transition={{ duration: 0.2 }}
+          whileHover={{ scale: 1.05, zIndex: 10 }}
           style={{
-            background: '#f0f0f0',
+            background: '#1a1a1a',
             borderRadius: '12px',
             overflow: 'hidden',
             cursor: 'pointer',
             position: 'relative',
+            aspectRatio: '3/4',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
           }}
         >
           {/* Status Badge */}
           {status && status !== '未視聴' && (
             <div style={{
-              position: 'absolute', top: '8px', right: '8px', zIndex: 2,
+              position: 'absolute', top: '8px', right: '8px', zIndex: 5,
               background: statusColors[status] || '#666',
               color: '#fff', fontSize: '10px', fontWeight: 'bold',
               padding: '2px 8px', borderRadius: '4px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
             }}>
               {status}
             </div>
           )}
 
-          {/* Image - fixed aspect ratio */}
-          <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: '#ddd' }}>
+          {/* Image */}
+          <div style={{ width: '100%', height: '100%', position: 'relative' }}>
             {anime.image_url ? (
               <img src={anime.image_url} alt={anime.title}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             ) : (
-              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ color: '#999', fontSize: '13px', textAlign: 'center', padding: '16px' }}>
-                  ここに<br />アニメの<br />画像
-                </span>
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#333' }}>
+                <span style={{ color: '#666', fontSize: '12px', textAlign: 'center' }}>画像なし</span>
               </div>
             )}
-          </div>
 
-          {/* Info */}
-          <div style={{ padding: '10px 12px', borderTop: '1px solid #ccc' }}>
+            {/* Gradient Overlay */}
             <div style={{
-              fontSize: '13px', fontWeight: 'bold', color: '#222',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              position: 'absolute', bottom: 0, left: 0, width: '100%', height: '60%',
+              background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 40%, transparent 100%)',
+              zIndex: 2,
+            }} />
+
+            {/* Info Overlay */}
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, width: '100%', padding: '12px',
+              zIndex: 3, display: 'flex', flexDirection: 'column', gap: '4px',
             }}>
-              {anime.title}
-            </div>
-
-            {/* Season */}
-            {anime.season && (
-              <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>{anime.season}</div>
-            )}
-
-            {/* Star Rating */}
-            {rating > 0 && (
-              <div style={{ marginTop: '4px' }}>
-                <StarRating value={rating} size={12} readonly />
+              <div style={{
+                fontSize: '14px', fontWeight: '900', color: '#fff',
+                textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {anime.title}
               </div>
-            )}
 
-            {/* Progress Bar */}
-            {showProgress && status === '視聴中' && total > 0 && (
-              <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ flex: 1, height: '5px', background: '#ccc', borderRadius: '3px', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                {rating > 0 ? (
+                  <StarRating value={rating} size={10} readonly />
+                ) : (
+                  <span style={{ fontSize: '10px', color: '#aaa' }}>{anime.season || '不明'}</span>
+                )}
+                
+                {showProgress && status === '視聴中' && total > 0 && (
+                   <span style={{ fontSize: '10px', color: '#3b82f6', fontWeight: 'bold' }}>{progress}/{total}話</span>
+                )}
+              </div>
+
+              {/* Progress Bar (Small) */}
+              {showProgress && status === '視聴中' && total > 0 && (
+                <div style={{ height: '3px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', overflow: 'hidden', marginTop: '2px' }}>
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${Math.min((progress / total) * 100, 100)}%` }}
-                    transition={{ duration: 0.6, ease: 'easeOut' }}
-                    style={{ height: '100%', background: '#3b82f6', borderRadius: '3px' }}
+                    style={{ height: '100%', background: '#3b82f6' }}
                   />
                 </div>
-                <span style={{ fontSize: '10px', color: '#666' }}>{progress}/{total}</span>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </motion.div>
       </Link>

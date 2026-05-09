@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useAnimeData } from '@/hooks/useAnimeData';
 import { Anime } from '@/types/anime';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import * as XLSX from 'xlsx';
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
@@ -28,6 +28,7 @@ export default function AdminPage() {
     await upsertAnime(anime);
     setMsg(editId ? '更新しました！' : '追加しました！');
     resetForm();
+    setTimeout(() => setMsg(''), 3000);
   };
 
   const handleEdit = (a: Anime) => {
@@ -35,6 +36,13 @@ export default function AdminPage() {
     setEditId(a.id);
     setMsg('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = (id: string) => {
+    // ダイアログなしで即座に削除
+    deleteAnime(id);
+    setMsg('削除しました。');
+    setTimeout(() => setMsg(''), 3000);
   };
 
   const handleXlsx = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,13 +71,13 @@ export default function AdminPage() {
       } else {
         setMsg('読み取れるデータが見つかりませんでした。');
       }
+      setTimeout(() => setMsg(''), 3000);
     };
     reader.readAsArrayBuffer(file);
   };
 
   return (
     <div style={{ padding: '40px 48px' }}>
-      {/* === 新規追加 / 編集フォーム === */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
         style={{ background: '#2a2a2a', borderRadius: '16px', padding: '32px', marginBottom: '40px' }}
       >
@@ -116,29 +124,24 @@ export default function AdminPage() {
         </div>
       </motion.div>
 
-      {/* === 登録済み作品リスト === */}
       <h2 style={{ fontSize: '20px', marginBottom: '16px', color: '#d4a843' }}>登録済み作品 ({rawAnimeList.length})</h2>
-      {rawAnimeList.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <AnimatePresence>
           {rawAnimeList.map((a) => (
-            <motion.div key={a.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            <motion.div key={a.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
               style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '12px 16px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333' }}
             >
               {a.image_url && <img src={a.image_url} alt="" style={{ width: '40px', height: '56px', objectFit: 'cover', borderRadius: '4px' }} />}
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{a.title}</div>
-                <div style={{ fontSize: '12px', color: '#777' }}>{a.season} | {a.total_episodes}話 | {a.tags.join(', ')}</div>
+                <div style={{ fontSize: '12px', color: '#777' }}>{a.season} | {a.total_episodes}話</div>
               </div>
               <button onClick={() => handleEdit(a)} style={{ padding: '6px 16px', background: '#333', border: '1px solid #555', borderRadius: '6px', color: '#d4a843', fontSize: '12px', cursor: 'pointer' }}>編集</button>
-              <button onClick={() => { if (confirm('削除しますか？')) deleteAnime(a.id); }} style={{ padding: '6px 16px', background: '#333', border: '1px solid #555', borderRadius: '6px', color: '#f87171', fontSize: '12px', cursor: 'pointer' }}>削除</button>
+              <button onClick={() => handleDelete(a.id)} style={{ padding: '6px 16px', background: '#333', border: '1px solid #555', borderRadius: '6px', color: '#f87171', fontSize: '12px', cursor: 'pointer' }}>削除</button>
             </motion.div>
           ))}
-        </div>
-      ) : (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#666', background: '#1a1a1a', borderRadius: '12px' }}>
-          まだ作品が登録されていません。上のフォームから追加するか、XLSXファイルをインポートしてください。
-        </div>
-      )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

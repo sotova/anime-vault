@@ -8,7 +8,7 @@ import { AnimeStatus } from '@/types/anime';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 
-const ReactPlayer = dynamic(() => import('react-player'), { ssr: false }) as any;
+const ReactPlayer = dynamic(() => import('react-player/lazy'), { ssr: false }) as any;
 
 export default function AnimeDetailPage() {
   const { id } = useParams();
@@ -49,13 +49,11 @@ export default function AnimeDetailPage() {
             ))}
           </div>
 
-          {/* Star Rating */}
           <div style={{ marginBottom: '20px' }}>
             <div style={{ fontSize: '12px', color: '#888', marginBottom: '6px' }}>あなたの評価</div>
             <StarRating value={rating} size={28} onChange={(v) => updateUserData(anime.id, { rating: v })} />
           </div>
 
-          {/* Status */}
           <div style={{ marginBottom: '20px' }}>
             <div style={{ fontSize: '12px', color: '#888', marginBottom: '6px' }}>視聴状態</div>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -70,7 +68,6 @@ export default function AnimeDetailPage() {
             </div>
           </div>
 
-          {/* Progress */}
           {status === '視聴中' && anime.total_episodes > 0 && (
             <div style={{ marginBottom: '20px' }}>
               <div style={{ fontSize: '12px', color: '#888', marginBottom: '6px' }}>進行状況</div>
@@ -80,18 +77,10 @@ export default function AnimeDetailPage() {
                   style={{ width: '60px', padding: '6px', background: '#222', border: '1px solid #444', borderRadius: '4px', color: '#fff', fontSize: '14px', textAlign: 'center' }}
                 />
                 <span style={{ color: '#666', fontSize: '13px' }}>/ {anime.total_episodes} 話</span>
-                <div style={{ flex: 1, height: '6px', background: '#333', borderRadius: '3px', overflow: 'hidden' }}>
-                  <motion.div
-                    initial={{ width: 0 }} animate={{ width: `${Math.min((progress / anime.total_episodes) * 100, 100)}%` }}
-                    transition={{ duration: 0.5 }}
-                    style={{ height: '100%', background: '#3b82f6', borderRadius: '3px' }}
-                  />
-                </div>
               </div>
             </div>
           )}
 
-          {/* Add to Library */}
           {!anime.userData && (
             <button onClick={() => updateUserData(anime.id, { status: '未視聴', rating: 0, progress: 0 })}
               style={{ width: '100%', padding: '14px', background: '#d4a843', color: '#000', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}
@@ -99,29 +88,36 @@ export default function AnimeDetailPage() {
           )}
         </motion.div>
 
-        {/* Right: PV / Image */}
+        {/* Right: Media */}
         <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-          <div style={{ aspectRatio: '16/9', background: '#111', borderRadius: '12px', overflow: 'hidden' }}>
+          <div style={{ aspectRatio: '16/9', background: '#000', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
             {anime.pv_url ? (
-              <ReactPlayer url={anime.pv_url} playing muted loop width="100%" height="100%"
-                config={{ youtube: { playerVars: { autoplay: 1, mute: 1, controls: 0, showinfo: 0, rel: 0, loop: 1 } } }}
+              <ReactPlayer
+                url={anime.pv_url}
+                playing
+                muted
+                loop
+                controls
+                width="100%"
+                height="100%"
+                config={{
+                  youtube: {
+                    playerVars: { showinfo: 1, rel: 0, autoplay: 1, mute: 1 }
+                  }
+                }}
+                onError={(e: any) => console.error("Player Error:", e)}
               />
             ) : anime.image_url ? (
               <img src={anime.image_url} alt={anime.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#444' }}>
                 PV / 画像なし
               </div>
             )}
           </div>
-          <div style={{ marginTop: '16px', display: 'flex', gap: '24px' }}>
-            <div><div style={{ fontSize: '11px', color: '#666' }}>放送季</div><div style={{ fontSize: '14px', color: '#ccc' }}>{anime.season || '未設定'}</div></div>
-            <div><div style={{ fontSize: '11px', color: '#666' }}>総話数</div><div style={{ fontSize: '14px', color: '#ccc' }}>{anime.total_episodes || '未設定'}</div></div>
-          </div>
         </motion.div>
       </div>
 
-      {/* Similar */}
       {similar.length > 0 && (
         <section>
           <h2 style={{ fontSize: '16px', marginBottom: '16px', color: '#ccc' }}>類似のアニメ（このアニメを見た人におすすめ）</h2>
