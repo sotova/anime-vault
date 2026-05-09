@@ -5,6 +5,7 @@ import { useAnimeData } from '@/hooks/useAnimeData';
 import { Anime } from '@/types/anime';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as XLSX from 'xlsx';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 
@@ -42,9 +43,13 @@ export default function AdminPage() {
       created_at: new Date().toISOString() 
     } as Anime;
     
-    await upsertAnime(anime);
-    setMsg(editId ? 'クラウドとローカルを更新しました！' : 'クラウドに保存しました！');
-    resetForm();
+    try {
+      await upsertAnime(anime);
+      setMsg(editId ? 'クラウドに更新しました！' : 'クラウドに保存しました！');
+      resetForm();
+    } catch (e: any) {
+      alert('保存に失敗しました: ' + e.message);
+    }
     setTimeout(() => setMsg(''), 4000);
   };
 
@@ -82,27 +87,38 @@ export default function AdminPage() {
       
       const animes: Anime[] = rows.map((row) => {
         const getVal = (keys: string[]) => {
-          for (const key of keys) { if (row[key] !== undefined && row[key] !== null) return String(row[key]); }
+          for (const key of keys) {
+            // 列名をトリミングして、大文字小文字を無視して比較
+            const foundKey = Object.keys(row).find(k => k.trim().toLowerCase() === key.toLowerCase());
+            if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null) return String(row[foundKey]);
+          }
           return '';
         };
+
         return {
           id: genId(),
-          title: getVal(['タイトル', 'title', '名前']),
-          season: getVal(['放送季', 'season', '時期']),
-          synopsis: getVal(['あらすじ', 'synopsis', '概要']),
-          image_url: getVal(['画像', 'image_url', 'ポスター']),
-          pv_url: getVal(['PV', 'pv_url', '動画']),
-          official_site: getVal(['公式サイト', 'url', 'site']),
-          copyright: getVal(['コピーライト', 'copyright', '©']),
-          tags: getVal(['タグ', 'tags']).split(/[、,]/).map((t) => t.trim()).filter(Boolean),
-          total_episodes: parseInt(getVal(['話数', 'episodes'])) || 0,
+          title: getVal(['タイトル', 'title', 'Title', '名前', 'name']),
+          season: getVal(['放送季', 'season', 'Season', '時期', '年代', '放送時期']),
+          synopsis: getVal(['あらすじ', 'synopsis', 'Synopsis', '概要', '説明', 'description']),
+          image_url: getVal(['画像', 'image_url', 'image', 'Image', '画像URL', 'ポスター', 'イメージ', 'url_image', 'poster', '画像リンク']),
+          pv_url: getVal(['PV', 'pv_url', 'PV URL', 'youtube', 'YouTube', '動画', 'pv_link']),
+          official_site: getVal(['公式サイト', 'url', 'site', 'website', 'official']),
+          copyright: getVal(['コピーライト', 'copyright', '©', 'rights']),
+          tags: getVal(['タグ', 'tags', 'Tags', 'ジャンル', 'category']).split(/[、,，\n]/).map((t) => t.trim()).filter(Boolean),
+          total_episodes: parseInt(getVal(['話数', 'total_episodes', 'episodes', '話', 'episode_count'])) || 0,
           created_at: new Date().toISOString(),
         };
       }).filter((a) => a.title);
 
       if (animes.length > 0) {
-        await bulkUpsert(animes);
-        setMsg(`${animes.length} 件をクラウドに一括登録しました！`);
+        try {
+          await bulkUpsert(animes);
+          setMsg(`${animes.length} 件をクラウドに一括登録しました！`);
+        } catch (e: any) {
+          alert('一括保存に失敗しました: ' + e.message);
+        }
+      } else {
+        setMsg('タイトル列が見つかりませんでした。');
       }
       setTimeout(() => setMsg(''), 3000);
     };
@@ -112,11 +128,19 @@ export default function AdminPage() {
 
   return (
     <div style={{ padding: '40px 48px' }}>
+      {/* 接続デバッグ情報 */}
+      {!isSupabaseConfigured && (
+        <div style={{ background: '#450a0a', border: '1px solid #ef4444', padding: '12px', borderRadius: '8px', marginBottom: '24px', color: '#fecaca', fontSize: '14px' }}>
+          ⚠️ <strong>クラウド（Supabase）が設定されていません。</strong><br />
+          この端末にしか保存されず、他の端末とは共有されません。README の「ステップ 7」を確認してください。
+        </div>
+      )}
+
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
         style={{ background: '#2a2a2a', borderRadius: '16px', padding: '32px', marginBottom: '40px' }}
       >
         <h2 style={{ fontSize: '20px', color: '#d4a843', marginBottom: '20px' }}>
-          {editId ? '✏️ 作品を編集 (クラウド同期)' : '＋ 新規登録 (クラウド保存)'}
+          {editId ? '✏️ 作品を編集' : '＋ 新規登録'}
         </h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '24px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
