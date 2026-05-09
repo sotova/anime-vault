@@ -1,4 +1,4 @@
-export type AnimeStatus = '未視聴' | '視聴中' | '完了' | '保留' | '視聴切り';
+export type AnimeStatus = '見たい' | '視聴中' | '完了' | '保留' | '視聴切り';
 
 export interface Anime {
   id: string;

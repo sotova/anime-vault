@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 
 const TABS: { label: string; value: AnimeStatus | 'すべて' }[] = [
   { label: 'すべて', value: 'すべて' },
-  { label: '未視聴', value: '未視聴' },
+  { label: '見たい', value: '見たい' },
   { label: '視聴中', value: '視聴中' },
   { label: '完了', value: '完了' },
   { label: '保留', value: '保留' },
@@ -23,17 +23,20 @@ export default function LibraryPage() {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortKey>('title');
 
+  // ライブラリに追加された作品（userDataがあるもの）のみを対象にする
+  const myLibrary = useMemo(() => animeList.filter(a => a.userData), [animeList]);
+
   const filtered = useMemo(() => {
-    let list = animeList;
+    let list = myLibrary;
     // Tab filter
-    if (activeTab !== 'すべて') list = list.filter((a) => (a.userData?.status || '未視聴') === activeTab);
+    if (activeTab !== 'すべて') list = list.filter((a) => a.userData?.status === activeTab);
     // Search
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter((a) =>
         a.title.toLowerCase().includes(q) ||
         a.tags.some((t) => t.toLowerCase().includes(q)) ||
-        (a.userData?.status || '未視聴').includes(q)
+        (a.userData?.status || '').includes(q)
       );
     }
     // Sort
@@ -44,7 +47,7 @@ export default function LibraryPage() {
       return 0;
     });
     return list;
-  }, [animeList, activeTab, search, sortBy]);
+  }, [myLibrary, activeTab, search, sortBy]);
 
   if (loading) return <div style={{ padding: '60px', color: '#999' }}>読み込み中...</div>;
 
@@ -54,7 +57,7 @@ export default function LibraryPage() {
         initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
         style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '48px', color: '#d4a843', textAlign: 'center', marginBottom: '24px' }}
       >
-        Library
+        My Library
       </motion.h1>
 
       {/* Tabs */}
@@ -73,7 +76,7 @@ export default function LibraryPage() {
       {/* Search + Sort + Export/Import */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
         <input
-          placeholder="タイトル・タグ・状態で検索..."
+          placeholder="ライブラリ内を検索..."
           value={search} onChange={(e) => setSearch(e.target.value)}
           style={{
             flex: 1, minWidth: '200px', padding: '10px 14px', background: '#111', border: '1px solid #333',
@@ -105,7 +108,7 @@ export default function LibraryPage() {
         </div>
       ) : (
         <div style={{ padding: '60px', textAlign: 'center', color: '#666', background: '#1a1a1a', borderRadius: '12px' }}>
-          {search ? '検索結果がありません。' : activeTab === 'すべて' ? 'まだ作品が登録されていません。' : `「${activeTab}」の作品はまだありません。`}
+          {search ? '検索結果がありません。' : activeTab === 'すべて' ? 'ライブラリは空です。作品詳細から「ライブラリに追加」してください。' : `「${activeTab}」の作品はまだありません。`}
         </div>
       )}
     </div>

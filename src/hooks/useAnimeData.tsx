@@ -116,7 +116,7 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
   const updateUserData = (animeId: string, updates: Partial<UserAnimeData>) => {
     setUserData((prev) => ({
       ...prev,
-      [animeId]: { ...(prev[animeId] || { status: '未視聴', rating: 0, progress: 0 }), ...updates },
+      [animeId]: { ...(prev[animeId] || { status: '見たい', rating: 0, progress: 0 }), ...updates },
     }));
   };
 

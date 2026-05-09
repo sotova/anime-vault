@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAnimeData } from '@/hooks/useAnimeData';
 import { Anime } from '@/types/anime';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +19,7 @@ export default function AdminPage() {
   const [tagInput, setTagInput] = useState('');
   const [msg, setMsg] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
+  const [adminSearch, setAdminSearch] = useState('');
 
   const resetForm = () => { setForm({ id: '', title: '', season: '', synopsis: '', image_url: '', pv_url: '', tags: [], total_episodes: 0 }); setTagInput(''); setEditId(null); };
 
@@ -44,6 +45,15 @@ export default function AdminPage() {
     setTimeout(() => setMsg(''), 3000);
   };
 
+  const filteredList = useMemo(() => {
+    if (!adminSearch.trim()) return rawAnimeList;
+    const q = adminSearch.toLowerCase();
+    return rawAnimeList.filter(a => 
+      a.title.toLowerCase().includes(q) || 
+      a.tags.some(t => t.toLowerCase().includes(q))
+    );
+  }, [rawAnimeList, adminSearch]);
+
   const handleXlsx = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -55,14 +65,10 @@ export default function AdminPage() {
       const rows: Record<string, any>[] = XLSX.utils.sheet_to_json(sheet);
       
       const animes: Anime[] = rows.map((row) => {
-        // 列名の揺れを吸収するヘルパー
         const getVal = (keys: string[]) => {
-          for (const key of keys) {
-            if (row[key] !== undefined && row[key] !== null) return String(row[key]);
-          }
+          for (const key of keys) { if (row[key] !== undefined && row[key] !== null) return String(row[key]); }
           return '';
         };
-
         return {
           id: genId(),
           title: getVal(['タイトル', 'title', 'Title', '名前']),
@@ -78,14 +84,13 @@ export default function AdminPage() {
 
       if (animes.length > 0) {
         await bulkUpsert(animes);
-        setMsg(`${animes.length} 件の作品を一括追加しました！`);
+        setMsg(`${animes.length} 件を一括追加しました！`);
       } else {
-        setMsg('読み取れるアニメデータが見つかりませんでした。');
+        setMsg('データが見つかりませんでした。');
       }
       setTimeout(() => setMsg(''), 3000);
     };
     reader.readAsArrayBuffer(file);
-    // 同じファイルを再度選択できるようにリセット
     e.target.value = '';
   };
 
@@ -137,10 +142,19 @@ export default function AdminPage() {
         </div>
       </motion.div>
 
-      <h2 style={{ fontSize: '20px', marginBottom: '16px', color: '#d4a843' }}>登録済み作品 ({rawAnimeList.length})</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '20px', color: '#d4a843' }}>登録済み作品 ({rawAnimeList.length})</h2>
+        <input 
+          style={{ ...inputStyle, width: '300px', padding: '8px 12px' }} 
+          placeholder="登録済み作品を検索..." 
+          value={adminSearch} 
+          onChange={(e) => setAdminSearch(e.target.value)} 
+        />
+      </div>
+      
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <AnimatePresence>
-          {rawAnimeList.map((a) => (
+          {filteredList.map((a) => (
             <motion.div key={a.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
               style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '12px 16px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333' }}
             >
@@ -154,6 +168,9 @@ export default function AdminPage() {
             </motion.div>
           ))}
         </AnimatePresence>
+        {filteredList.length === 0 && (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>見つかりませんでした。</div>
+        )}
       </div>
     </div>
   );
