@@ -44,7 +44,7 @@ export function AnimeCard({ anime, showProgress = false, index = 0 }: AnimeCardP
           }}
         >
           {/* Status Badge */}
-          {status && status !== '未視聴' && (
+          {status && status !== '見たい' && (
             <div style={{
               position: 'absolute', top: '8px', right: '8px', zIndex: 5,
               background: statusColors[status] || '#666',
