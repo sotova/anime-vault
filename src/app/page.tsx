@@ -90,7 +90,7 @@ function HorizontalScroll({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%', group: 'true' }} className="scroll-container-outer">
+    <div style={{ position: 'relative', width: '100%' }} className="scroll-container-outer">
       {/* Scroll Buttons (Desktop only) */}
       <button onClick={() => scroll('left')} className="scroll-btn left">‹</button>
       <button onClick={() => scroll('right')} className="scroll-btn right">›</button>
