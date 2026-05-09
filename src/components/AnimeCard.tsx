@@ -84,7 +84,7 @@ export function AnimeCard({ anime, showProgress = false, index = 0 }: AnimeCardP
             }}>
               <div style={{
                 fontSize: '13px', fontWeight: 'bold', color: '#fff',
-                overflow: 'hidden', textOverflow: 'ellipsis', white-space: 'nowrap',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 textShadow: '0 2px 4px rgba(0,0,0,0.8)'
               }}>
                 {anime.title}
