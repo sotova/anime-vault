@@ -12,6 +12,7 @@ interface AnimeCardProps {
 }
 
 const statusColors: Record<string, string> = {
+  '見たい': '#6366f1', // インディゴ色
   '視聴中': '#3b82f6',
   '完了': '#22c55e',
   '保留': '#f59e0b',
@@ -44,8 +45,8 @@ export function AnimeCard({ anime, showProgress = false, index = 0 }: AnimeCardP
             border: '1px solid rgba(255,255,255,0.05)'
           }}
         >
-          {/* Status Badge */}
-          {status && status !== '見たい' && (
+          {/* Status Badge - 全てのステータスを表示 */}
+          {status && (
             <div style={{
               position: 'absolute', top: '8px', right: '8px', zIndex: 10,
               background: statusColors[status] || '#666', color: '#fff',

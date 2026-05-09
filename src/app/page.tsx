@@ -6,17 +6,17 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRef, useState, useEffect, useMemo } from 'react';
 
-// 現在のシーズン（例: 2024年 春）を取得する関数
+// ユーザー様の形式「2026 春」に合わせて取得
 function getCurrentSeason() {
   const now = new Date();
   const year = now.getFullYear();
-  const month = now.getMonth() + 1; // 1-12
+  const month = now.getMonth() + 1;
   let season = '';
   if (month >= 1 && month <= 3) season = '冬';
   else if (month >= 4 && month <= 6) season = '春';
   else if (month >= 7 && month <= 9) season = '夏';
   else season = '秋';
-  return `${year}年 ${season}`;
+  return `${year} ${season}`; // 「年」を抜いた形式
 }
 
 export default function HomePage() {
@@ -26,9 +26,10 @@ export default function HomePage() {
   if (loading) return <div style={{ padding: '60px', color: '#999', textAlign: 'center' }}>読み込み中...</div>;
 
   const watching = animeList.filter((a) => a.userData?.status === '視聴中');
-  // 今季アニメのみを抽出
   const seasonal = animeList.filter((a) => a.season === currentSeasonLabel);
-  const recommended = animeList.slice().sort(() => 0.5 - Math.random()).slice(0, 24);
+  // 「見たい」作品を抽出
+  const planToWatch = animeList.filter((a) => a.userData?.status === '見たい');
+  const recommended = animeList.slice().sort(() => 0.5 - Math.random()).slice(0, 15);
 
   return (
     <div style={{ padding: '60px 0', width: '100%', overflowX: 'hidden' }}>
@@ -36,7 +37,7 @@ export default function HomePage() {
         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
         style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 'clamp(32px, 8vw, 56px)', color: '#d4a843', textAlign: 'center', marginBottom: '60px', textShadow: '0 4px 20px rgba(212,168,67,0.2)' }}
       >
-        Anime Manager
+        Anime Vault
       </motion.h1>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '50px' }}>
@@ -55,8 +56,17 @@ export default function HomePage() {
           ) : <div style={{ padding: '40px', color: '#444', textAlign: 'center', width: '100%' }}>{currentSeasonLabel} の作品はまだ登録されていません</div>}
         </CarouselSection>
 
+        {/* 変更: 見たい作品 */}
+        <CarouselSection title="見たい作品 (ライブラリ)" href="/library">
+          {planToWatch.length > 0 ? (
+            planToWatch.map((a, i) => <CardFrame key={a.id}><AnimeCard anime={a} index={i} /></CardFrame>)
+          ) : <div style={{ padding: '40px', color: '#444', textAlign: 'center', width: '100%' }}>ライブラリに「見たい」作品がありません</div>}
+        </CarouselSection>
+
         <CarouselSection title="おすすめの作品" href="/anime">
-          {recommended.map((a, i) => <CardFrame key={a.id}><AnimeCard anime={a} index={i} /></CardFrame>)}
+          {recommended.length > 0 ? (
+            recommended.map((a, i) => <CardFrame key={a.id}><AnimeCard anime={a} index={i} /></CardFrame>)
+          ) : <div style={{ padding: '40px', color: '#444', textAlign: 'center', width: '100%' }}>作品がありません</div>}
         </CarouselSection>
       </div>
     </div>
@@ -100,7 +110,6 @@ function CarouselSection({ title, children, href }: { title: string; children: R
       </div>
 
       <div style={{ position: 'relative', width: '100%' }} onMouseEnter={checkScroll}>
-        
         {canScroll.left && (
           <div style={{ 
             position: 'absolute', left: 0, top: 0, bottom: 0, width: '100px', 
@@ -115,7 +124,6 @@ function CarouselSection({ title, children, href }: { title: string; children: R
             >‹</button>
           </div>
         )}
-
         {canScroll.right && (
           <div style={{ 
             position: 'absolute', right: 0, top: 0, bottom: 0, width: '100px', 
@@ -130,21 +138,7 @@ function CarouselSection({ title, children, href }: { title: string; children: R
             >›</button>
           </div>
         )}
-
-        <div 
-          ref={scrollRef}
-          onScroll={checkScroll}
-          className="no-scrollbar"
-          style={{ 
-            display: 'flex', 
-            gap: '20px', 
-            overflowX: 'auto', 
-            padding: '10px 60px 30px',
-            scrollSnapType: 'x proximity',
-            scrollBehavior: 'smooth',
-            scrollPaddingLeft: '60px'
-          }}
-        >
+        <div ref={scrollRef} onScroll={checkScroll} className="no-scrollbar" style={{ display: 'flex', gap: '20px', overflowX: 'auto', padding: '10px 60px 30px', scrollSnapType: 'x proximity', scrollBehavior: 'smooth', scrollPaddingLeft: '60px' }}>
           {children}
         </div>
       </div>
@@ -154,11 +148,7 @@ function CarouselSection({ title, children, href }: { title: string; children: R
 
 function CardFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ 
-      width: 'clamp(140px, 20vw, 200px)', 
-      flexShrink: 0,
-      scrollSnapAlign: 'start'
-    }}>
+    <div style={{ width: 'clamp(140px, 20vw, 200px)', flexShrink: 0, scrollSnapAlign: 'start' }}>
       {children}
     </div>
   );

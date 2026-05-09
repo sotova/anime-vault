@@ -76,14 +76,25 @@ export default function AnimeDetailPage() {
           <div style={{ marginBottom: '24px' }}>
             <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>視聴状態</div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {(['見たい', '視聴中', '完了', '保留', '視聴切り'] as AnimeStatus[]).map((s) => (
-                <button key={s} onClick={() => updateUserData(anime.id, { status: s })}
-                  style={{
-                    padding: '8px 18px', borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s',
-                    background: anime.userData?.status === s ? '#d4a843' : '#222', color: anime.userData?.status === s ? '#000' : '#ccc',
-                  }}
-                >{s}</button>
-              ))}
+              {(['見たい', '視聴中', '完了', '保留', '視聴切り'] as AnimeStatus[]).map((s) => {
+                const colors: Record<string, string> = {
+                  '見たい': '#6366f1',
+                  '視聴中': '#3b82f6',
+                  '完了': '#22c55e',
+                  '保留': '#f59e0b',
+                  '視聴切り': '#ef4444',
+                };
+                const isActive = anime.userData?.status === s;
+                return (
+                  <button key={s} onClick={() => updateUserData(anime.id, { status: s })}
+                    style={{
+                      padding: '8px 18px', borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s',
+                      background: isActive ? colors[s] : '#222', 
+                      color: isActive ? '#fff' : '#ccc',
+                    }}
+                  >{s}</button>
+                );
+              })}
             </div>
           </div>
 
