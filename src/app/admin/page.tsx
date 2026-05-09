@@ -39,7 +39,6 @@ export default function AdminPage() {
   };
 
   const handleDelete = (id: string) => {
-    // ダイアログなしで即座に削除
     deleteAnime(id);
     setMsg('削除しました。');
     setTimeout(() => setMsg(''), 3000);
@@ -54,26 +53,40 @@ export default function AdminPage() {
       const wb = XLSX.read(data, { type: 'array' });
       const sheet = wb.Sheets[wb.SheetNames[0]];
       const rows: Record<string, any>[] = XLSX.utils.sheet_to_json(sheet);
-      const animes: Anime[] = rows.map((row) => ({
-        id: genId(),
-        title: String(row['タイトル'] || row['title'] || row['Title'] || Object.values(row)[0] || ''),
-        season: String(row['放送季'] || row['season'] || row['Season'] || ''),
-        synopsis: String(row['あらすじ'] || row['synopsis'] || ''),
-        image_url: String(row['画像'] || row['image_url'] || ''),
-        pv_url: String(row['PV'] || row['pv_url'] || ''),
-        tags: (row['タグ'] || row['tags'] || '').toString().split(',').map((t: string) => t.trim()).filter(Boolean),
-        total_episodes: parseInt(row['話数'] || row['total_episodes'] || '0') || 0,
-        created_at: new Date().toISOString(),
-      })).filter((a) => a.title);
+      
+      const animes: Anime[] = rows.map((row) => {
+        // 列名の揺れを吸収するヘルパー
+        const getVal = (keys: string[]) => {
+          for (const key of keys) {
+            if (row[key] !== undefined && row[key] !== null) return String(row[key]);
+          }
+          return '';
+        };
+
+        return {
+          id: genId(),
+          title: getVal(['タイトル', 'title', 'Title', '名前']),
+          season: getVal(['放送季', 'season', 'Season', '時期', '年代']),
+          synopsis: getVal(['あらすじ', 'synopsis', 'Synopsis', '概要', '説明']),
+          image_url: getVal(['画像', 'image_url', 'image', 'Image', '画像URL', 'ポスター', 'イメージ']),
+          pv_url: getVal(['PV', 'pv_url', 'PV URL', 'youtube', 'YouTube', '動画']),
+          tags: getVal(['タグ', 'tags', 'Tags', 'ジャンル']).split(/[、,]/).map((t) => t.trim()).filter(Boolean),
+          total_episodes: parseInt(getVal(['話数', 'total_episodes', 'episodes', '話'])) || 0,
+          created_at: new Date().toISOString(),
+        };
+      }).filter((a) => a.title);
+
       if (animes.length > 0) {
         await bulkUpsert(animes);
-        setMsg(`${animes.length} 件の作品を追加しました！`);
+        setMsg(`${animes.length} 件の作品を一括追加しました！`);
       } else {
-        setMsg('読み取れるデータが見つかりませんでした。');
+        setMsg('読み取れるアニメデータが見つかりませんでした。');
       }
       setTimeout(() => setMsg(''), 3000);
     };
     reader.readAsArrayBuffer(file);
+    // 同じファイルを再度選択できるようにリセット
+    e.target.value = '';
   };
 
   return (
