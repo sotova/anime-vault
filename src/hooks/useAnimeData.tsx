@@ -17,6 +17,8 @@ interface AnimeContextType {
   deleteAnime: (id: string) => Promise<void>;
   updateUserData: (animeId: string, updates: Partial<UserAnimeData>) => void;
   removeFromLibrary: (animeId: string) => void;
+  exportUserData: () => void;
+  importUserData: (json: string) => boolean;
   refresh: () => Promise<void>;
 }
 
@@ -28,7 +30,6 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isCloudSynced, setIsCloudSynced] = useState(false);
 
-  // 1. ローカルデータを最速で読み込む
   useEffect(() => {
     const localAnimes = localStorage.getItem(LOCAL_DB_KEY);
     const localUser = localStorage.getItem(USER_DATA_KEY);
@@ -36,13 +37,11 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
     if (localUser) setUserData(JSON.parse(localUser));
   }, []);
 
-  // 2. クラウド（Supabase）から最新データを取得
   const fetchCloud = useCallback(async () => {
     if (!isSupabaseConfigured || !supabase) {
       setLoading(false);
       return;
     }
-
     try {
       const { data, error } = await supabase.from('anime').select('*').order('created_at', { ascending: false });
       if (error) throw error;
@@ -63,20 +62,14 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
     fetchCloud();
   }, [fetchCloud]);
 
-  // 作品の追加・更新（クラウド最優先、失敗してもローカルには保存）
   const upsertAnime = async (anime: Anime): Promise<boolean> => {
-    // ローカルを即座に更新
     const newList = [anime, ...animeList.filter(a => a.id !== anime.id)];
     setAnimeList(newList);
     localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(newList));
 
     if (isSupabaseConfigured && supabase) {
       const { error } = await supabase.from('anime').upsert([anime]);
-      if (error) {
-        console.error('Supabase save error:', error);
-        return false;
-      }
-      return true;
+      return !error;
     }
     return false;
   };
@@ -90,8 +83,7 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
 
     if (isSupabaseConfigured && supabase) {
       const { error } = await supabase.from('anime').upsert(list);
-      if (error) return false;
-      return true;
+      return !error;
     }
     return false;
   };
@@ -100,10 +92,7 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
     const newList = animeList.filter(a => a.id !== id);
     setAnimeList(newList);
     localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(newList));
-
-    if (isSupabaseConfigured && supabase) {
-      await supabase.from('anime').delete().eq('id', id);
-    }
+    if (isSupabaseConfigured && supabase) await supabase.from('anime').delete().eq('id', id);
   };
 
   const updateUserData = (animeId: string, updates: Partial<UserAnimeData>) => {
@@ -126,6 +115,22 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const exportUserData = () => {
+    const blob = new Blob([JSON.stringify(userData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'anime_user_data.json'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importUserData = (json: string) => {
+    try {
+      const data = JSON.parse(json);
+      setUserData(data);
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(data));
+      return true;
+    } catch { return false; }
+  };
+
   const hybridData: HybridAnime[] = animeList.map((a) => ({ ...a, userData: userData[a.id] }));
 
   return (
@@ -139,6 +144,8 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
       deleteAnime,
       updateUserData,
       removeFromLibrary,
+      exportUserData,
+      importUserData,
       refresh: fetchCloud
     }}>
       {children}
