@@ -5,7 +5,7 @@ import { useAnimeData } from '@/hooks/useAnimeData';
 import { Anime } from '@/types/anime';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as XLSX from 'xlsx';
-import { isSupabaseConfigured } from '@/lib/supabase';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 
@@ -28,14 +28,21 @@ export default function AdminPage() {
   const handleSave = async () => {
     if (!form.title?.trim()) return;
     const anime = { ...form, id: form.id || genId(), created_at: new Date().toISOString() } as Anime;
-    const success = await upsertAnime(anime);
-    if (success) {
-      setMsg({ text: 'クラウドに保存しました', type: 'success' });
-      setForm({ id: '', title: '', season: '', synopsis: '', image_url: '', pv_url: '', tags: [], total_episodes: 0, official_site: '', copyright: '' });
-      setEditId(null);
-    } else {
-      setMsg({ text: 'クラウド保存に失敗（ローカルのみ保存）', type: 'error' });
+    
+    // 直接エラーをキャッチして表示
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from('anime').upsert([anime]);
+      if (error) {
+        alert('クラウド保存エラー: ' + error.message + '\n\n詳細: ' + error.details);
+        setMsg({ text: '保存失敗', type: 'error' });
+        return;
+      }
     }
+
+    await upsertAnime(anime);
+    setMsg({ text: 'クラウドに保存しました', type: 'success' });
+    setForm({ id: '', title: '', season: '', synopsis: '', image_url: '', pv_url: '', tags: [], total_episodes: 0, official_site: '', copyright: '' });
+    setEditId(null);
     setTimeout(() => setMsg({ text: '', type: '' }), 3000);
   };
 
@@ -70,11 +77,19 @@ export default function AdminPage() {
       }).filter(a => a.title);
 
       if (animes.length > 0) {
-        const ok = await bulkUpsert(animes);
-        setMsg({ text: ok ? `${animes.length}件を保存しました` : '保存中にエラー', type: ok ? 'success' : 'error' });
+        if (isSupabaseConfigured && supabase) {
+          const { error } = await supabase.from('anime').upsert(animes);
+          if (error) {
+            alert('一括保存エラー: ' + error.message);
+            return;
+          }
+        }
+        await bulkUpsert(animes);
+        setMsg({ text: `${animes.length}件を保存しました`, type: 'success' });
       }
     };
     reader.readAsArrayBuffer(file);
+    e.target.value = '';
   };
 
   const filtered = rawAnimeList.filter(a => a.title.toLowerCase().includes(adminSearch.toLowerCase()));
