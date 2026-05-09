@@ -56,7 +56,7 @@ export default function HomePage() {
         </CarouselSection>
 
         <CarouselSection title="おすすめの作品" href="/anime">
-          {recommended.map((a, i) => <CardFrame key={a.id}><AnimeCard anime={a} index={i} /></CardFrame>)
+          {recommended.map((a, i) => <CardFrame key={a.id}><AnimeCard anime={a} index={i} /></CardFrame>)}
         </CarouselSection>
       </div>
     </div>
