@@ -1,16 +1,26 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAnimeData } from '@/hooks/useAnimeData';
 import { AnimeCard } from '@/components/AnimeCard';
 import { motion } from 'framer-motion';
 
 type SortKey = 'title' | 'season' | 'newest';
 
-export default function AnimeListPage() {
+function AnimeListContent() {
   const { animeList, loading } = useAnimeData();
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortKey>('newest');
+
+  // URLパラメータにseasonがあれば初期値としてセットする
+  useEffect(() => {
+    const seasonQuery = searchParams.get('season');
+    if (seasonQuery) {
+      setSearch(seasonQuery);
+    }
+  }, [searchParams]);
 
   const filtered = useMemo(() => {
     let list = [...animeList];
@@ -20,13 +30,13 @@ export default function AnimeListPage() {
       list = list.filter((a) =>
         a.title.toLowerCase().includes(q) ||
         a.tags.some((t) => t.toLowerCase().includes(q)) ||
-        a.season.toLowerCase().includes(q)
+        (a.season && a.season.toLowerCase().includes(q))
       );
     }
 
     list.sort((a, b) => {
       if (sortBy === 'title') return a.title.localeCompare(b.title, 'ja');
-      if (sortBy === 'season') return b.season.localeCompare(a.season);
+      if (sortBy === 'season') return (b.season || '').localeCompare(a.season || '');
       if (sortBy === 'newest') return (b.created_at || '').localeCompare(a.created_at || '');
       return 0;
     });
@@ -34,23 +44,23 @@ export default function AnimeListPage() {
     return list;
   }, [animeList, search, sortBy]);
 
-  if (loading) return <div style={{ padding: '60px', color: '#999' }}>読み込み中...</div>;
+  if (loading) return <div style={{ padding: '60px', color: '#999', textAlign: 'center' }}>読み込み中...</div>;
 
   return (
     <div style={{ padding: '40px 48px' }}>
       <motion.h1
         initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '42px', color: '#d4a843', textAlign: 'center', marginBottom: '32px' }}
+        style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 'clamp(24px, 6vw, 42px)', color: '#d4a843', textAlign: 'center', marginBottom: '32px' }}
       >
         Explore Anime
       </motion.h1>
 
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', alignItems: 'center', flexWrap: 'wrap' }}>
         <input
           placeholder="タイトル・タグ・年代で検索..."
           value={search} onChange={(e) => setSearch(e.target.value)}
           style={{
-            flex: 1, padding: '12px 18px', background: '#111', border: '1px solid #333',
+            flex: 1, minWidth: '200px', padding: '12px 18px', background: '#111', border: '1px solid #333',
             borderRadius: '10px', color: '#fff', fontSize: '15px', outline: 'none',
           }}
         />
@@ -64,7 +74,7 @@ export default function AnimeListPage() {
       </div>
 
       {filtered.length > 0 ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '24px' }}>
           {filtered.map((a, i) => <AnimeCard key={a.id} anime={a} index={i} />)}
         </div>
       ) : (
@@ -73,5 +83,13 @@ export default function AnimeListPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AnimeListPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '60px', color: '#999', textAlign: 'center' }}>準備中...</div>}>
+      <AnimeListContent />
+    </Suspense>
   );
 }

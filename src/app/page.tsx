@@ -4,15 +4,30 @@ import { useAnimeData } from '@/hooks/useAnimeData';
 import { AnimeCard } from '@/components/AnimeCard';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
+
+// 現在のシーズン（例: 2024年 春）を取得する関数
+function getCurrentSeason() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1; // 1-12
+  let season = '';
+  if (month >= 1 && month <= 3) season = '冬';
+  else if (month >= 4 && month <= 6) season = '春';
+  else if (month >= 7 && month <= 9) season = '夏';
+  else season = '秋';
+  return `${year}年 ${season}`;
+}
 
 export default function HomePage() {
   const { animeList, loading } = useAnimeData();
+  const currentSeasonLabel = useMemo(() => getCurrentSeason(), []);
 
   if (loading) return <div style={{ padding: '60px', color: '#999', textAlign: 'center' }}>読み込み中...</div>;
 
   const watching = animeList.filter((a) => a.userData?.status === '視聴中');
-  const seasonal = animeList.filter((a) => a.season).slice(0, 24);
+  // 今季アニメのみを抽出
+  const seasonal = animeList.filter((a) => a.season === currentSeasonLabel);
   const recommended = animeList.slice().sort(() => 0.5 - Math.random()).slice(0, 24);
 
   return (
@@ -31,12 +46,17 @@ export default function HomePage() {
           </CarouselSection>
         )}
 
-        <CarouselSection title="今季アニメ" href="/anime">
-          {seasonal.map((a, i) => <CardFrame key={a.id}><AnimeCard anime={a} index={i} /></CardFrame>)}
+        <CarouselSection 
+          title={`今季アニメ (${currentSeasonLabel})`} 
+          href={`/anime?season=${encodeURIComponent(currentSeasonLabel)}`}
+        >
+          {seasonal.length > 0 ? (
+            seasonal.map((a, i) => <CardFrame key={a.id}><AnimeCard anime={a} index={i} /></CardFrame>)
+          ) : <div style={{ padding: '40px', color: '#444', textAlign: 'center', width: '100%' }}>{currentSeasonLabel} の作品はまだ登録されていません</div>}
         </CarouselSection>
 
         <CarouselSection title="おすすめの作品" href="/anime">
-          {recommended.map((a, i) => <CardFrame key={a.id}><AnimeCard anime={a} index={i} /></CardFrame>)}
+          {recommended.map((a, i) => <CardFrame key={a.id}><AnimeCard anime={a} index={i} /></CardFrame>)
         </CarouselSection>
       </div>
     </div>
@@ -81,7 +101,6 @@ function CarouselSection({ title, children, href }: { title: string; children: R
 
       <div style={{ position: 'relative', width: '100%' }} onMouseEnter={checkScroll}>
         
-        {/* Left Gradient & Button (Only show when scrolled) */}
         {canScroll.left && (
           <div style={{ 
             position: 'absolute', left: 0, top: 0, bottom: 0, width: '100px', 
@@ -97,7 +116,6 @@ function CarouselSection({ title, children, href }: { title: string; children: R
           </div>
         )}
 
-        {/* Right Gradient & Button */}
         {canScroll.right && (
           <div style={{ 
             position: 'absolute', right: 0, top: 0, bottom: 0, width: '100px', 
@@ -124,7 +142,7 @@ function CarouselSection({ title, children, href }: { title: string; children: R
             padding: '10px 60px 30px',
             scrollSnapType: 'x proximity',
             scrollBehavior: 'smooth',
-            scrollPaddingLeft: '60px' // Align snap to the padding
+            scrollPaddingLeft: '60px'
           }}
         >
           {children}
