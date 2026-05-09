@@ -4,151 +4,122 @@ import { useAnimeData } from '@/hooks/useAnimeData';
 import { AnimeCard } from '@/components/AnimeCard';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 export default function HomePage() {
   const { animeList, loading } = useAnimeData();
 
-  if (loading) return <div style={{ padding: '60px', color: '#999' }}>読み込み中...</div>;
+  if (loading) return <div style={{ padding: '60px', color: '#999', textAlign: 'center' }}>読み込み中...</div>;
 
   const watching = animeList.filter((a) => a.userData?.status === '視聴中');
-  const seasonal = animeList.filter((a) => a.season).slice(0, 15);
-  const recommended = animeList.slice().sort(() => 0.5 - Math.random()).slice(0, 15);
+  const seasonal = animeList.filter((a) => a.season).slice(0, 20);
+  const recommended = animeList.slice().sort(() => 0.5 - Math.random()).slice(0, 20);
 
   return (
     <div style={{ padding: '40px 0', width: '100%', overflowX: 'hidden' }}>
       <motion.h1
         initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        className="home-title"
+        style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 'clamp(24px, 8vw, 48px)', color: '#d4a843', textAlign: 'center', marginBottom: '40px' }}
       >
         Anime Manager
       </motion.h1>
 
-      <div style={{ width: '100%' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
         {watching.length > 0 && (
-          <Section title="視聴中の作品" href="/library">
-            <HorizontalScroll>
-              {watching.map((a, i) => <CardWrapper key={a.id}><AnimeCard anime={a} showProgress index={i} /></CardWrapper>)}
-            </HorizontalScroll>
-          </Section>
+          <CarouselSection title="視聴中の作品" href="/library">
+            {watching.map((a, i) => <CardFrame key={a.id}><AnimeCard anime={a} showProgress index={i} /></CardFrame>)}
+          </CarouselSection>
         )}
 
-        <Section title="今季アニメ" href="/anime">
+        <CarouselSection title="今季アニメ" href="/anime">
           {seasonal.length > 0 ? (
-            <HorizontalScroll>
-              {seasonal.map((a, i) => <CardWrapper key={a.id}><AnimeCard anime={a} index={i} /></CardWrapper>)}
-            </HorizontalScroll>
-          ) : <EmptyState text="登録済み作品がありません" />}
-        </Section>
+            seasonal.map((a, i) => <CardFrame key={a.id}><AnimeCard anime={a} index={i} /></CardFrame>)
+          ) : <div style={{ padding: '40px', color: '#444', textAlign: 'center', width: '100%' }}>作品がありません</div>}
+        </CarouselSection>
 
-        <Section title="あなたにおすすめ" href="/anime">
+        <CarouselSection title="おすすめの作品" href="/anime">
           {recommended.length > 0 ? (
-            <HorizontalScroll>
-              {recommended.map((a, i) => <CardWrapper key={a.id}><AnimeCard anime={a} index={i} /></CardWrapper>)}
-            </HorizontalScroll>
-          ) : <EmptyState text="作品を登録してください" />}
-        </Section>
+            recommended.map((a, i) => <CardFrame key={a.id}><AnimeCard anime={a} index={i} /></CardFrame>)
+          ) : <div style={{ padding: '40px', color: '#444', textAlign: 'center', width: '100%' }}>作品がありません</div>}
+        </CarouselSection>
       </div>
-
-      <style jsx>{`
-        .home-title {
-          font-family: 'Georgia', serif;
-          font-style: italic;
-          font-size: 48px;
-          color: #d4a843;
-          text-align: center;
-          margin-bottom: 48px;
-        }
-        @media (max-width: 768px) {
-          .home-title { font-size: 32px; margin-bottom: 24px; }
-        }
-      `}</style>
     </div>
   );
 }
 
-function Section({ title, children, href }: { title: string; children: React.ReactNode; href?: string }) {
-  return (
-    <div style={{ marginBottom: '40px', width: '100%' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 5%', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 'bold' }}>{title}</h2>
-        {href && <Link href={href} style={{ fontSize: '13px', color: '#d4a843', textDecoration: 'none' }}>すべて表示 →</Link>}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function HorizontalScroll({ children }: { children: React.ReactNode }) {
+function CarouselSection({ title, children, href }: { title: string; children: React.ReactNode; href?: string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [showButtons, setShowButtons] = useState(false);
 
-  const scroll = (dir: 'left' | 'right') => {
+  useEffect(() => {
+    // デスクトップの場合のみボタンを表示候補にする
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    setShowButtons(!isMobile);
+  }, []);
+
+  const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const scrollAmount = 600;
-      scrollRef.current.scrollBy({ left: dir === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+      const { scrollLeft, clientWidth } = scrollRef.current;
+      const scrollTo = direction === 'left' ? scrollLeft - clientWidth * 0.8 : scrollLeft + clientWidth * 0.8;
+      scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
     }
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%' }} className="scroll-container-outer">
-      {/* Scroll Buttons (Desktop only) */}
-      <button onClick={() => scroll('left')} className="scroll-btn left">‹</button>
-      <button onClick={() => scroll('right')} className="scroll-btn right">›</button>
-
-      <div ref={scrollRef} className="scroll-row">
-        {children}
+    <div style={{ width: '100%' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 5%', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: 'clamp(16px, 4vw, 22px)', fontWeight: 'bold', color: '#fff' }}>{title}</h2>
+        {href && <Link href={href} style={{ fontSize: '13px', color: '#d4a843', textDecoration: 'none', fontWeight: 'bold' }}>すべて表示 →</Link>}
       </div>
 
-      <style jsx>{`
-        .scroll-row {
-          display: flex;
-          gap: 20px;
-          overflow-x: auto;
-          padding: 10px 5% 30px;
-          scrollbar-width: none;
-          ms-overflow-style: none;
-        }
-        .scroll-row::-webkit-scrollbar { display: none; }
-        
-        .scroll-btn {
-          position: absolute;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 40px;
-          height: 40px;
-          background: rgba(0,0,0,0.7);
-          border: 1px solid #444;
-          color: #d4a843;
-          border-radius: 50%;
-          font-size: 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          z-index: 10;
-          opacity: 0;
-          transition: opacity 0.3s;
-          pointer-events: auto;
-        }
-        .scroll-container-outer:hover .scroll-btn {
-          opacity: 1;
-        }
-        .left { left: 10px; }
-        .right { right: 10px; }
+      <div style={{ position: 'relative', width: '100%' }}>
+        {/* Buttons (Desktop Only) */}
+        {showButtons && (
+          <>
+            <button 
+              onClick={() => scroll('left')}
+              className="scroll-btn-hover"
+              style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', zIndex: 10, width: '44px', height: '44px', borderRadius: '50%', border: '1px solid #444', color: '#d4a843', cursor: 'pointer', fontSize: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              ‹
+            </button>
+            <button 
+              onClick={() => scroll('right')}
+              className="scroll-btn-hover"
+              style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', zIndex: 10, width: '44px', height: '44px', borderRadius: '50%', border: '1px solid #444', color: '#d4a843', cursor: 'pointer', fontSize: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              ›
+            </button>
+          </>
+        )}
 
-        @media (max-width: 768px) {
-          .scroll-btn { display: none; }
-          .scroll-row { gap: 12px; }
-        }
-      `}</style>
+        <div 
+          ref={scrollRef}
+          className="no-scrollbar"
+          style={{ 
+            display: 'flex', 
+            gap: '16px', 
+            overflowX: 'auto', 
+            padding: '10px 5% 30px',
+            scrollSnapType: 'x proximity',
+            scrollBehavior: 'smooth'
+          }}
+        >
+          {children}
+        </div>
+      </div>
     </div>
   );
 }
 
-function CardWrapper({ children }: { children: React.ReactNode }) {
-  return <div style={{ width: '160px', flexShrink: 0 }}>{children}</div>;
-}
-
-function EmptyState({ text }: { text: string }) {
-  return <div style={{ margin: '0 5%', padding: '40px', textAlign: 'center', color: '#444', background: '#111', borderRadius: '12px' }}>{text}</div>;
+function CardFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ 
+      width: 'clamp(130px, 30vw, 180px)', 
+      flexShrink: 0,
+      scrollSnapAlign: 'start'
+    }}>
+      {children}
+    </div>
+  );
 }
