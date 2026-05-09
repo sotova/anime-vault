@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { Anime, UserAnimeData, HybridAnime } from '@/types/anime';
 
@@ -15,6 +15,7 @@ interface AnimeContextType {
   bulkUpsert: (list: Anime[]) => Promise<void>;
   deleteAnime: (id: string) => Promise<void>;
   updateUserData: (animeId: string, updates: Partial<UserAnimeData>) => void;
+  removeFromLibrary: (animeId: string) => void;
   exportUserData: () => void;
   importUserData: (json: string) => boolean;
   refresh: () => Promise<void>;
@@ -26,7 +27,10 @@ function loadLocal<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
   try {
     const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : fallback;
+    if (!item) return fallback;
+    const parsed = JSON.parse(item);
+    // 空配列や空オブジェクトが保存されている場合も考慮
+    return parsed || fallback;
   } catch { return fallback; }
 }
 
@@ -34,60 +38,54 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
   const [animeList, setAnimeList] = useState<Anime[]>([]);
   const [userData, setUserData] = useState<Record<string, UserAnimeData>>({});
   const [loading, setLoading] = useState(true);
+  const isInitialized = useRef(false);
 
+  // 初回読み込み
   const fetchAnime = useCallback(async () => {
     setLoading(true);
+    let initialAnime: Anime[] = loadLocal<Anime[]>(LOCAL_DB_KEY, []);
+    let initialUser: Record<string, UserAnimeData> = loadLocal<Record<string, UserAnimeData>>(USER_DATA_KEY, {});
+
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase.from('anime').select('*').order('created_at', { ascending: false });
-        if (!error && data) {
-          setAnimeList(data);
-          localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(data));
-          setLoading(false);
-          return;
+        if (!error && data && data.length > 0) {
+          initialAnime = data;
         }
       } catch (e) {
-        console.error('Supabase fetch failed, falling back to local', e);
+        console.error('Supabase fetch failed', e);
       }
     }
-    setAnimeList(loadLocal<Anime[]>(LOCAL_DB_KEY, []));
+
+    setAnimeList(initialAnime);
+    setUserData(initialUser);
     setLoading(false);
+    isInitialized.current = true;
+    
+    // ロード直後に保存して整合性をとる
+    localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(initialAnime));
+    localStorage.setItem(USER_DATA_KEY, JSON.stringify(initialUser));
   }, []);
 
   useEffect(() => {
     fetchAnime();
-    setUserData(loadLocal<Record<string, UserAnimeData>>(USER_DATA_KEY, {}));
   }, [fetchAnime]);
 
-  useEffect(() => {
-    if (!loading) {
-      localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
-    }
-  }, [userData, loading]);
-
+  // データが更新されたら即座に保存
   const upsertAnime = async (anime: Anime) => {
-    if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase.from('anime').upsert([anime]);
-      if (error) console.error('Supabase upsert error:', error);
-    }
     setAnimeList((prev) => {
       const idx = prev.findIndex((a) => a.id === anime.id);
-      let newList;
-      if (idx >= 0) {
-        newList = [...prev];
-        newList[idx] = anime;
-      } else {
-        newList = [anime, ...prev];
-      }
+      const newList = idx >= 0 ? prev.map(a => a.id === anime.id ? anime : a) : [anime, ...prev];
       localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(newList));
       return newList;
     });
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('anime').upsert([anime]);
+    }
   };
 
   const bulkUpsert = async (list: Anime[]) => {
-    if (isSupabaseConfigured && supabase) {
-      await supabase.from('anime').upsert(list);
-    }
     setAnimeList((prev) => {
       const map = new Map(prev.map((a) => [a.id, a]));
       list.forEach((a) => map.set(a.id, a));
@@ -95,12 +93,13 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(newList));
       return newList;
     });
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('anime').upsert(list);
+    }
   };
 
   const deleteAnime = async (id: string) => {
-    if (isSupabaseConfigured && supabase) {
-      await supabase.from('anime').delete().eq('id', id);
-    }
     setAnimeList((prev) => {
       const newList = prev.filter((a) => a.id !== id);
       localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(newList));
@@ -109,15 +108,33 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
     setUserData((prev) => {
       const c = { ...prev };
       delete c[id];
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(c));
       return c;
     });
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('anime').delete().eq('id', id);
+    }
   };
 
   const updateUserData = (animeId: string, updates: Partial<UserAnimeData>) => {
-    setUserData((prev) => ({
-      ...prev,
-      [animeId]: { ...(prev[animeId] || { status: '見たい', rating: 0, progress: 0 }), ...updates },
-    }));
+    setUserData((prev) => {
+      const newData = {
+        ...prev,
+        [animeId]: { ...(prev[animeId] || { status: '見たい', rating: 0, progress: 0 }), ...updates },
+      };
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(newData));
+      return newData;
+    });
+  };
+
+  const removeFromLibrary = (animeId: string) => {
+    setUserData((prev) => {
+      const c = { ...prev };
+      delete c[animeId];
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(c));
+      return c;
+    });
   };
 
   const exportUserData = () => {
@@ -131,6 +148,7 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = JSON.parse(json);
       setUserData(data);
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(data));
       return true;
     } catch { return false; }
   };
@@ -145,6 +163,7 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
     bulkUpsert,
     deleteAnime,
     updateUserData,
+    removeFromLibrary,
     exportUserData,
     importUserData,
     refresh: fetchAnime,

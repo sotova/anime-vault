@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 
 const NAV_ITEMS = [
   { label: 'ホーム', href: '/' },
+  { label: 'アニメ一覧', href: '/anime' },
   { label: 'ライブラリ', href: '/library' },
   { label: '管理', href: '/admin' },
 ];
@@ -14,7 +15,7 @@ export function Sidebar() {
 
   return (
     <aside style={{
-      width: '160px', // 幅を少し広げた
+      width: '160px',
       minHeight: '100vh',
       background: '#111',
       borderRight: '1px solid #333',
@@ -57,7 +58,7 @@ export function Sidebar() {
               transition: 'all 0.2s',
               textAlign: 'center',
               letterSpacing: '1px',
-              whiteSpace: 'nowrap', // 改行を防ぐ
+              whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
             }}
