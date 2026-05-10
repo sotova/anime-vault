@@ -15,37 +15,27 @@ export async function POST(req: Request) {
 
     const animeList: any[] = [];
 
-    // アニメイトタイムズの作品ブロックを解析
-    // セレクタは実際のHTML構造に合わせて調整
-    $('.tag_details_block').each((_, el) => {
-      const title = $(el).find('h2').text().trim();
+    // アニメイトタイムズの新しい構造に対応
+    $('section.c-tag-detail').each((_, el) => {
+      const title = $(el).find('h2.c-tag-detail__title').text().trim();
       if (!title) return;
 
-      const image_url = $(el).find('img').attr('src') || '';
+      const image_url = $(el).find('.c-tag-detail__image img').attr('src') || '';
+      const synopsis = $(el).find('.c-tag-detail__description').text().trim();
       
-      // あらすじ・スタッフ・キャストなどが含まれるテキスト
-      const fullText = $(el).find('.tag_details_block_text').text();
-      
-      // あらすじの抽出 (作品名〜放送形態の間などを抜粋)
-      let synopsis = '';
-      const synopMatch = fullText.match(/([\s\S]*?)作品名/);
-      if (synopMatch) synopsis = synopMatch[1].trim();
+      // コピーライト (複数のクラスの可能性があるため柔軟に対応)
+      const copyright = $(el).find('.c-tag-detail__copyright, .c-tag-detail__copy').text().trim();
 
-      // コピーライトの抽出
-      let copyright = '';
-      const copyMatch = fullText.match(/\(C\).*|©.*/);
-      if (copyMatch) copyright = copyMatch[0].trim();
-
-      // 公式サイト
+      // 公式サイトURL
       const official_site = $(el).find('a[href*="official"]').attr('href') || 
                             $(el).find('a:contains("公式サイト")').attr('href') || '';
 
-      // シーズンの抽出 (タイトルやパンくずから判定)
-      const seasonTitle = $('h1').text();
+      // シーズン (ページタイトルから推測)
+      const pageTitle = $('title').text();
       let season = '';
-      const seasonMatch = seasonTitle.match(/\d{4}年?\s*[春夏秋冬]/);
+      const seasonMatch = pageTitle.match(/\d{4}年?\s*[春夏秋冬]/);
       if (seasonMatch) {
-        season = seasonMatch[0].replace('年', ''); // 「2026 春」形式に
+        season = seasonMatch[0].replace('年', ''); // 「2026 春」形式
       }
 
       animeList.push({
