@@ -4,8 +4,41 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { Anime, UserAnimeData, HybridAnime } from '@/types/anime';
 
-const LOCAL_DB_KEY = 'anime_vault_global_db';
+const LOCAL_DB_NAME = 'AnimeVaultDB';
+const STORE_NAME = 'anime_list';
 const USER_DATA_KEY = 'anime_vault_user_library';
+
+// Simple IndexedDB Wrapper
+async function getIDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(LOCAL_DB_NAME, 1);
+    request.onupgradeneeded = () => request.result.createObjectStore(STORE_NAME, { keyPath: 'id' });
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveToIDB(list: Anime[]) {
+  const db = await getIDB();
+  const tx = db.transaction(STORE_NAME, 'readwrite');
+  const store = tx.objectStore(STORE_NAME);
+  await store.clear();
+  for (const item of list) store.put(item);
+  return new Promise(resolve => tx.oncomplete = resolve);
+}
+
+async function loadFromIDB(): Promise<Anime[]> {
+  try {
+    const db = await getIDB();
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    return new Promise((resolve) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => resolve([]);
+    });
+  } catch { return []; }
+}
 
 interface AnimeContextType {
   animeList: HybridAnime[];
@@ -30,71 +63,86 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isCloudSynced, setIsCloudSynced] = useState(false);
 
+  // 初回ロード
   useEffect(() => {
-    const localAnimes = localStorage.getItem(LOCAL_DB_KEY);
-    const localUser = localStorage.getItem(USER_DATA_KEY);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (localAnimes) setAnimeList(JSON.parse(localAnimes));
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (localUser) setUserData(JSON.parse(localUser));
+    async function init() {
+      const idbList = await loadFromIDB();
+      if (idbList.length > 0) setAnimeList(idbList);
+      
+      const localUser = localStorage.getItem(USER_DATA_KEY);
+      if (localUser) setUserData(JSON.parse(localUser));
+      setLoading(false);
+    }
+    init();
   }, []);
 
   const fetchCloud = useCallback(async () => {
-    if (!isSupabaseConfigured || !supabase) {
-      setLoading(false);
-      return;
-    }
+    if (!isSupabaseConfigured || !supabase) return;
     try {
       const { data, error } = await supabase.from('anime').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       if (data) {
         setAnimeList(data);
-        localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(data));
+        await saveToIDB(data);
         setIsCloudSynced(true);
       }
     } catch (e) {
       console.error('Cloud sync failed:', e);
       setIsCloudSynced(false);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchCloud();
   }, [fetchCloud]);
 
   const upsertAnime = async (anime: Anime): Promise<boolean> => {
-    const newList = [anime, ...animeList.filter(a => a.id !== anime.id)];
-    setAnimeList(newList);
-    localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(newList));
+    try {
+      const newList = [anime, ...animeList.filter(a => a.id !== anime.id)];
+      setAnimeList(newList);
+      await saveToIDB(newList);
 
-    if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase.from('anime').upsert([anime]);
-      return !error;
+      if (isSupabaseConfigured && supabase) {
+        const { error } = await supabase.from('anime').upsert([anime]);
+        if (error) throw error;
+      }
+      return true;
+    } catch (e) {
+      console.error('Save failed:', e);
+      alert('保存に失敗しました。容量制限か通信エラーの可能性があります。');
+      return false;
     }
-    return false;
   };
 
   const bulkUpsert = async (list: Anime[]): Promise<boolean> => {
-    const map = new Map(animeList.map(a => [a.id, a]));
-    list.forEach(a => map.set(a.id, a));
-    const newList = Array.from(map.values());
-    setAnimeList(newList);
-    localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(newList));
+    try {
+      const map = new Map(animeList.map(a => [a.id, a]));
+      list.forEach(a => map.set(a.id, a));
+      const newList = Array.from(map.values());
+      setAnimeList(newList);
+      await saveToIDB(newList);
 
-    if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase.from('anime').upsert(list);
-      return !error;
+      if (isSupabaseConfigured && supabase) {
+        // 分割して送信（念のため）
+        const chunkSize = 50;
+        for (let i = 0; i < list.length; i += chunkSize) {
+          const chunk = list.slice(i, i + chunkSize);
+          const { error } = await supabase.from('anime').upsert(chunk);
+          if (error) throw error;
+        }
+      }
+      return true;
+    } catch (e) {
+      console.error('Bulk save failed:', e);
+      alert('一括保存に失敗しました。');
+      return false;
     }
-    return false;
   };
 
   const deleteAnime = async (id: string) => {
     const newList = animeList.filter(a => a.id !== id);
     setAnimeList(newList);
-    localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(newList));
+    await saveToIDB(newList);
     if (isSupabaseConfigured && supabase) await supabase.from('anime').delete().eq('id', id);
   };
 
