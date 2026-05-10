@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useAnimeData } from '@/hooks/useAnimeData';
 import { Anime } from '@/types/anime';
-import { utils } from 'xlsx';
+import { read, utils } from 'xlsx';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { getBaseTitle } from '@/utils/animeUtils';
