@@ -22,6 +22,12 @@ function getCurrentSeason() {
 export default function HomePage() {
   const { animeList, loading } = useAnimeData();
   const currentSeasonLabel = useMemo(() => getCurrentSeason(), []);
+  const [recommended, setRecommended] = useState<typeof animeList>([]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRecommended(animeList.slice().sort(() => 0.5 - Math.random()).slice(0, 15));
+  }, [animeList]);
 
   if (loading) return <div style={{ padding: '60px', color: '#999', textAlign: 'center' }}>読み込み中...</div>;
 
@@ -29,7 +35,6 @@ export default function HomePage() {
   const seasonal = animeList.filter((a) => a.season === currentSeasonLabel);
   // 「見たい」作品を抽出
   const planToWatch = animeList.filter((a) => a.userData?.status === '見たい');
-  const recommended = animeList.slice().sort(() => 0.5 - Math.random()).slice(0, 15);
 
   return (
     <div style={{ padding: '60px 0', width: '100%', overflowX: 'hidden' }}>

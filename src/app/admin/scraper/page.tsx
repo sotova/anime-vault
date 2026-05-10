@@ -24,7 +24,7 @@ export default function ScraperPage() {
       if (data.error) throw new Error(data.error);
 
       if (data.animeList?.length > 0) {
-        const excelData = data.animeList.map((a: any) => ({
+        const excelData = data.animeList.map((a: Record<string, unknown>) => ({
           'タイトル': a.title,
           '放送季': a.season,
           'あらすじ': a.synopsis,
@@ -40,8 +40,8 @@ export default function ScraperPage() {
         writeFileXLSX(wb, `Anime_Export_${new Date().getTime()}.xlsx`);
         setScrapeUrl('');
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsProcessing(false);
     }

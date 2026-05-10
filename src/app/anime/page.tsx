@@ -18,6 +18,7 @@ function AnimeListContent() {
   useEffect(() => {
     const seasonQuery = searchParams.get('season');
     if (seasonQuery) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearch(seasonQuery);
     }
   }, [searchParams]);

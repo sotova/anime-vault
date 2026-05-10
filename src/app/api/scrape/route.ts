@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     const seasonMatch = pageTitle.match(/(\d{4})年?([春夏秋冬])/);
     if (seasonMatch) season = `${seasonMatch[1]} ${seasonMatch[2]}`;
 
-    const animeList: any[] = [];
+    const animeList: Record<string, unknown>[] = [];
 
     // アニメイトタイムズの各作品ブロック
     // 作品ブロックは .tag_details_contents 内に並ぶ div
@@ -73,7 +73,9 @@ export async function POST(req: Request) {
           pv_url: '',
           total_episodes: 0,
         });
-      } catch (_) {}
+      } catch {
+        // block errors ignored
+      }
     });
 
     // .tag_details_block が存在しない場合のフォールバック
@@ -111,7 +113,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ animeList, count: animeList.length });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || '予期しないエラーが発生しました' }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : '予期しないエラーが発生しました';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

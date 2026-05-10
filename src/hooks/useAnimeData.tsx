@@ -33,7 +33,9 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const localAnimes = localStorage.getItem(LOCAL_DB_KEY);
     const localUser = localStorage.getItem(USER_DATA_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (localAnimes) setAnimeList(JSON.parse(localAnimes));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (localUser) setUserData(JSON.parse(localUser));
   }, []);
 
@@ -59,6 +61,7 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchCloud();
   }, [fetchCloud]);
 

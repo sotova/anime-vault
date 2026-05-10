@@ -12,7 +12,7 @@ const INITIAL_FORM: Omit<Anime, 'created_at'> = {
 };
 
 // キーの柔軟マッチング（大文字小文字・空白を無視して含むかチェック）
-function getVal(row: Record<string, any>, candidates: string[]): string {
+function getVal(row: Record<string, unknown>, candidates: string[]): string {
   for (const key of Object.keys(row)) {
     const normalized = key.toLowerCase().replace(/[\s_\-]/g, '');
     for (const c of candidates) {
@@ -52,7 +52,7 @@ export default function AdminPage() {
     reader.onload = async (evt) => {
       const bstr = evt.target?.result;
       const wb = read(bstr, { type: 'binary' });
-      const data = utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]) as Record<string, any>[];
+      const data = utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]) as Record<string, unknown>[];
 
       const newList = data.map(row => ({
         id: Math.random().toString(36).slice(2),
