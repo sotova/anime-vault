@@ -30,12 +30,20 @@ export default function AdminPage() {
   const [tagInput, setTagInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [seasonFilter, setSeasonFilter] = useState('');
+  const [emptyFilter, setEmptyFilter] = useState('');
 
   const uniqueSeasons = Array.from(new Set(animeList.map(a => a.season))).filter(Boolean).sort().reverse();
 
   const filteredList = animeList.filter(a => {
     if (seasonFilter && a.season !== seasonFilter) return false;
     if (searchQuery && !a.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (emptyFilter) {
+      if (emptyFilter === 'tags' && a.tags.length > 0) return false;
+      if (emptyFilter === 'synopsis' && a.synopsis) return false;
+      if (emptyFilter === 'image_url' && a.image_url) return false;
+      if (emptyFilter === 'pv_url' && a.pv_url) return false;
+      if (emptyFilter === 'official_site' && a.official_site) return false;
+    }
     return true;
   });
 
@@ -302,6 +310,18 @@ export default function AdminPage() {
             >
               <option value="">全ての放送季</option>
               {uniqueSeasons.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <select
+              style={{ ...inputStyle, padding: '10px 14px', width: '150px', cursor: 'pointer' }}
+              value={emptyFilter}
+              onChange={e => setEmptyFilter(e.target.value)}
+            >
+              <option value="">未入力フィルタなし</option>
+              <option value="tags">タグ未入力</option>
+              <option value="synopsis">あらすじ未入力</option>
+              <option value="pv_url">PV未入力</option>
+              <option value="image_url">画像未入力</option>
+              <option value="official_site">公式サイト未入力</option>
             </select>
           </div>
         </div>

@@ -54,13 +54,22 @@ export async function POST(req: Request) {
         const copyMatch = fullText.match(/(?:©|(?:\(|（)[Cc](?:\)|）)).{1,150}/);
         const copyright = copyMatch ? copyMatch[0].trim() : '';
 
-        // 話数を取得: 全12話、全13回など
-        const episodeMatch = fullText.match(/全(\d+)[話回]/);
-        const total_episodes = episodeMatch ? parseInt(episodeMatch[1], 10) : 0;
+        // 話数を取得: 全12話、全13回、全 12 話 など
+        const episodeMatch = fullText.match(/全\s*([0-9０-９]+)\s*[話回]/);
+        let total_episodes = 0;
+        if (episodeMatch) {
+          total_episodes = parseInt(episodeMatch[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)), 10) || 0;
+        }
 
-        // あらすじ: 「作品名〇〇」の前のテキスト部分
-        const synopsisMatch = fullText.match(/^([\s\S]*?)作品名/);
-        const synopsis = synopsisMatch ? synopsisMatch[1].replace(title, '').trim().substring(0, 500) : '';
+        // あらすじ: 不要な情報（キャスト、放送形態など）を除外
+        let synopsis = fullText.replace(title, '').replace(/[\n\t\r]/g, ' ').replace(/\s+/g, ' ').trim();
+        const stopWords = ['作品名', '【キャスト】', 'キャスト：', 'キャスト:', '放送形態', 'スタッフ', '【スタッフ】', '放送期間', '主題歌', '公式サイト', 'あらすじ'];
+        let minIdx = synopsis.length;
+        for (const w of stopWords) {
+          const idx = synopsis.indexOf(w);
+          if (idx !== -1 && idx > 10 && idx < minIdx) minIdx = idx; // 冒頭のあらすじ等の見出しは無視
+        }
+        synopsis = synopsis.substring(0, minIdx).trim().substring(0, 500);
 
         // 公式サイトURL
         let official_site = '';
@@ -111,10 +120,21 @@ export async function POST(req: Request) {
 
         const copyMatch = contentText.match(/(?:©|(?:\(|（)[Cc](?:\)|）)).{1,150}/);
         const copyright = copyMatch ? copyMatch[0].trim() : '';
-        const synopsis = contentText.replace(title, '').replace(/[\n\t\r]/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 500);
+        
+        let synopsis = contentText.replace(title, '').replace(/[\n\t\r]/g, ' ').replace(/\s+/g, ' ').trim();
+        const stopWords = ['作品名', '【キャスト】', 'キャスト：', 'キャスト:', '放送形態', 'スタッフ', '【スタッフ】', '放送期間', '主題歌', '公式サイト', 'あらすじ'];
+        let minIdx = synopsis.length;
+        for (const w of stopWords) {
+          const idx = synopsis.indexOf(w);
+          if (idx !== -1 && idx > 10 && idx < minIdx) minIdx = idx;
+        }
+        synopsis = synopsis.substring(0, minIdx).trim().substring(0, 500);
 
-        const episodeMatch = contentText.match(/全(\d+)[話回]/);
-        const total_episodes = episodeMatch ? parseInt(episodeMatch[1], 10) : 0;
+        const episodeMatch = contentText.match(/全\s*([0-9０-９]+)\s*[話回]/);
+        let total_episodes = 0;
+        if (episodeMatch) {
+          total_episodes = parseInt(episodeMatch[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)), 10) || 0;
+        }
 
         if (image_url && !image_url.startsWith('http')) image_url = `https://www.animatetimes.com${image_url}`;
 

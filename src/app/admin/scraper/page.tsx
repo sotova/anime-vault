@@ -38,7 +38,8 @@ export default function ScraperPage() {
         const ws = utils.json_to_sheet(excelData);
         const wb = utils.book_new();
         utils.book_append_sheet(wb, ws, "ScrapedData");
-        writeFileXLSX(wb, `Anime_Export_${new Date().getTime()}.xlsx`);
+        const seasonName = data.animeList[0]?.season ? (data.animeList[0].season + 'アニメ') : ('Anime_Export_' + new Date().getTime());
+        writeFileXLSX(wb, `${seasonName}.xlsx`);
         setScrapeUrl('');
       }
     } catch (err: unknown) {

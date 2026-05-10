@@ -67,24 +67,40 @@ export default function AnimeDetailPage() {
         {/* Left: Info */}
         <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
           <h1 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '16px' }}>{anime.title}</h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
             {anime.season && <div style={{ fontSize: '16px', color: '#d4a843', fontWeight: 'bold' }}>{anime.season}</div>}
-            
-            {otherSeasons.length > 1 && (
-              <select 
-                value={anime.id}
-                onChange={(e) => router.push(`/anime/${e.target.value}`)}
-                style={{
-                  padding: '6px 12px', background: '#1a1a1a', border: '1px solid #333', 
-                  borderRadius: '6px', color: '#fff', fontSize: '13px', outline: 'none', cursor: 'pointer'
-                }}
-              >
-                {otherSeasons.map(s => (
-                  <option key={s.id} value={s.id}>{s.title}</option>
-                ))}
-              </select>
-            )}
+            <button 
+              onClick={() => router.push('/admin')} 
+              style={{ padding: '6px 12px', background: '#222', color: '#aaa', border: '1px solid #444', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}
+            >
+              ✎ 編集
+            </button>
           </div>
+
+          {otherSeasons.length > 1 && (
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>シリーズ・シーズン切り替え</div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {otherSeasons.map(s => {
+                  let suffix = s.title.replace(getBaseTitle(s.title), '').trim();
+                  if (!suffix) suffix = '第1期';
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => router.push(`/anime/${s.id}`)}
+                      style={{
+                        padding: '8px 16px', background: s.id === anime.id ? '#d4a843' : '#111', 
+                        color: s.id === anime.id ? '#000' : '#ccc', border: s.id === anime.id ? 'none' : '1px solid #333',
+                        borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s'
+                      }}
+                    >
+                      {s.season ? `${s.season} ` : ''}({suffix})
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <p style={{ fontSize: '15px', color: '#ccc', lineHeight: '1.8', marginBottom: '24px' }}>
             {anime.synopsis || 'あらすじはまだ登録されていません。'}

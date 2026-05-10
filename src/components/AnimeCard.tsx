@@ -33,7 +33,12 @@ export function AnimeCard({ anime, showProgress = false, index = 0 }: AnimeCardP
     >
       <Link href={`/anime/${anime.id}`} style={{ textDecoration: 'none' }}>
         <motion.div
-          whileHover={{ scale: 1.05, y: -5 }}
+          initial="initial"
+          whileHover="hover"
+          variants={{
+            initial: { scale: 1, y: 0 },
+            hover: { scale: 1.05, y: -5 }
+          }}
           style={{
             background: '#1a1a1a',
             borderRadius: '12px',
@@ -79,18 +84,31 @@ export function AnimeCard({ anime, showProgress = false, index = 0 }: AnimeCardP
             }} />
 
             {/* Info Overlay */}
-            <div style={{
-              position: 'absolute', bottom: 0, left: 0, width: '100%',
-              padding: '12px', zIndex: 3, display: 'flex', flexDirection: 'column', gap: '4px',
-              boxSizing: 'border-box'
-            }}>
-              <div style={{
-                fontSize: '13px', fontWeight: 'bold', color: '#fff',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+            <motion.div 
+              variants={{
+                initial: { y: 'calc(100% - 50px)' },
+                hover: { y: 0 }
+              }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              style={{
+                position: 'absolute', bottom: 0, left: 0, width: '100%',
+                padding: '12px', zIndex: 3, display: 'flex', flexDirection: 'column', gap: '4px',
+                boxSizing: 'border-box',
+                background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.8) 100%)'
               }}>
+              <motion.div 
+                variants={{
+                  initial: { whiteSpace: 'nowrap' },
+                  hover: { whiteSpace: 'normal' }
+                }}
+                style={{
+                  fontSize: '13px', fontWeight: 'bold', color: '#fff',
+                  overflow: 'hidden', textOverflow: 'ellipsis',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.8)',
+                  display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical'
+                }}>
                 {anime.title}
-              </div>
+              </motion.div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 {rating > 0 ? (
@@ -114,7 +132,21 @@ export function AnimeCard({ anime, showProgress = false, index = 0 }: AnimeCardP
                   />
                 </div>
               )}
-            </div>
+
+              {/* Synopsis Preview on Hover */}
+              <motion.div
+                variants={{
+                  initial: { opacity: 0, height: 0, marginTop: 0 },
+                  hover: { opacity: 1, height: 'auto', marginTop: '8px' }
+                }}
+                style={{
+                  fontSize: '11px', color: '#bbb', lineHeight: '1.4',
+                  overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical'
+                }}
+              >
+                {anime.synopsis || 'あらすじがありません'}
+              </motion.div>
+            </motion.div>
           </div>
         </motion.div>
       </Link>
