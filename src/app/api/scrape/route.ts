@@ -78,28 +78,39 @@ export async function POST(req: Request) {
       }
     });
 
-    // .tag_details_block が存在しない場合のフォールバック
+    // .tag_details_block が存在しない場合のフォールバック（別フォーマットの記事用）
     if (animeList.length === 0) {
-      // タイトル一覧からリンクを取得
-      const titleLinks: string[] = [];
-      $('a[href*="#"]').each((_, a) => {
-        const text = $(a).text().trim();
-        const href = $(a).attr('href') || '';
-        if (text && href.includes(url.split('?')[1]) && !titleLinks.includes(text)) {
-          titleLinks.push(text);
-        }
-      });
+      $('h2').each((_, el) => {
+        const title = $(el).text().trim();
+        // 目次や関係ないh2を除外
+        if (!title || title.includes('目次') || title.includes('一覧') || title.includes('関連')) return;
 
-      // 一意のタイトルをリスト化（重複除外）
-      const uniqueTitles = [...new Set(titleLinks)];
-      uniqueTitles.forEach(title => {
+        let contentText = '';
+        let image_url = '';
+        let official_site = '';
+        let nextEl = $(el).next();
+
+        // 次のh2が来るまでテキストとリンク、画像を収集
+        while (nextEl.length > 0 && nextEl[0].name !== 'h2' && nextEl[0].name !== 'style' && nextEl[0].name !== 'script') {
+          contentText += nextEl.text() + '\n';
+          if (!image_url) image_url = nextEl.find('img').attr('src') || '';
+          if (!official_site) official_site = nextEl.find('a:contains("公式サイト")').attr('href') || '';
+          nextEl = nextEl.next();
+        }
+
+        const copyMatch = contentText.match(/[\(（]?[Cc©][\)）]?.{1,200}/);
+        const copyright = copyMatch ? copyMatch[0].trim().substring(0, 150) : '';
+        const synopsis = contentText.replace(title, '').replace(/[\n\t\r]/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 500);
+
+        if (image_url && !image_url.startsWith('http')) image_url = `https://www.animatetimes.com${image_url}`;
+
         animeList.push({
           id: Math.random().toString(36).slice(2),
           title,
-          synopsis: '',
-          image_url: '',
-          copyright: '',
-          official_site: '',
+          synopsis,
+          image_url,
+          copyright,
+          official_site,
           season,
           tags: [season].filter(Boolean),
           pv_url: '',
