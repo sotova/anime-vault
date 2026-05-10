@@ -70,7 +70,7 @@ export default function AnimeDetailPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
             {anime.season && <div style={{ fontSize: '16px', color: '#d4a843', fontWeight: 'bold' }}>{anime.season}</div>}
             <button 
-              onClick={() => router.push('/admin')} 
+              onClick={() => router.push(`/admin?editId=${anime.id}`)} 
               style={{ padding: '6px 12px', background: '#222', color: '#aaa', border: '1px solid #444', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}
             >
               ✎ 編集
