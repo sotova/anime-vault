@@ -48,7 +48,7 @@ function AnimeListContent() {
   if (loading) return <div style={{ padding: '60px', color: '#999', textAlign: 'center' }}>読み込み中...</div>;
 
   return (
-    <div style={{ padding: '40px 48px' }}>
+    <div style={{ padding: '40px 5vw' }}>
       <motion.h1
         initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
         style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 'clamp(24px, 6vw, 42px)', color: '#d4a843', textAlign: 'center', marginBottom: '32px' }}
@@ -75,7 +75,7 @@ function AnimeListContent() {
       </div>
 
       {filtered.length > 0 ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '16px' }}>
           {filtered.map((a, i) => <AnimeCard key={a.id} anime={a} index={i} />)}
         </div>
       ) : (

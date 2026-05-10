@@ -109,7 +109,7 @@ function CarouselSection({ title, children, href }: { title: string; children: R
 
   return (
     <div style={{ width: '100%' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 60px', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 5vw', marginBottom: '16px' }}>
         <h2 style={{ fontSize: 'clamp(18px, 4vw, 24px)', fontWeight: 'bold', color: '#fff', letterSpacing: '0.05em' }}>{title}</h2>
         {href && <Link href={href} style={{ fontSize: '13px', color: '#d4a843', textDecoration: 'none', fontWeight: 'bold', opacity: 0.8 }}>すべて表示 →</Link>}
       </div>
@@ -143,7 +143,7 @@ function CarouselSection({ title, children, href }: { title: string; children: R
             >›</button>
           </div>
         )}
-        <div ref={scrollRef} onScroll={checkScroll} className="no-scrollbar" style={{ display: 'flex', gap: '20px', overflowX: 'auto', padding: '10px 60px 30px', scrollSnapType: 'x proximity', scrollBehavior: 'smooth', scrollPaddingLeft: '60px' }}>
+        <div ref={scrollRef} onScroll={checkScroll} className="no-scrollbar" style={{ display: 'flex', gap: '16px', overflowX: 'auto', padding: '10px 5vw 30px', scrollSnapType: 'x proximity', scrollBehavior: 'smooth', scrollPaddingLeft: '5vw' }}>
           {children}
         </div>
       </div>
@@ -153,7 +153,7 @@ function CarouselSection({ title, children, href }: { title: string; children: R
 
 function CardFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ width: 'clamp(140px, 20vw, 200px)', flexShrink: 0, scrollSnapAlign: 'start' }}>
+    <div style={{ width: 'clamp(110px, 28vw, 200px)', flexShrink: 0, scrollSnapAlign: 'start' }}>
       {children}
     </div>
   );

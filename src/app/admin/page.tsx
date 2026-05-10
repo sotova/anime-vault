@@ -74,7 +74,7 @@ export default function AdminPage() {
         pv_url:     getVal(row, ['PV', 'PVURL', 'pv_url', 'pvurl', 'trailer', 'video', 'youtube']),
         season:     getVal(row, ['放送季', 'シーズン', 'season', 'period', '年代']),
         total_episodes: parseInt(getVal(row, ['話数', '総話数', 'episodes', 'episode'])) || 0,
-        official_site: getVal(row, ['公式サイト', 'officialsite', 'url', 'link', 'website']),
+        official_site: getVal(row, ['公式サイト', 'officialsite', 'website']),
         copyright:  getVal(row, ['コピーライト', 'copyright', '権利表記', '©']),
       })).filter(a => a.title);
 
