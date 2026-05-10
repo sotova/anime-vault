@@ -9,14 +9,25 @@ export function getBaseTitle(anime: Anime | string): string {
   }
 
   if (!title) return '';
-  return title
-    .replace(/第?\d+[期巻章]/g, '')
-    .replace(/シーズン\s*\d+/g, '')
-    .replace(/Season\s*\d+/ig, '')
-    .replace(/\s+\d+$/, '') // " 2"
-    .replace(/[\s\-]+(?:II|III|IV|V|VI|VII|VIII|IX|X)$/, '') // " II"
-    .replace(/（[^）]*）$/, '') // "（再放送）" etc.
-    .replace(/\([^)]*\)$/, '')  // "(TVアニメ)" etc.
+
+  // サブタイトルや期数を除去するためのより強力な正規表現
+  let base = title
+    .replace(/[（(].*?[)）]$/, '') // 末尾のカッコを除去
+    .replace(/\s*(?:第?\d+[期回巻章]|シーズン\s*\d+|Season\s*\d+|Part\s*\d+|後編|前編|完結編|総集編|劇場版|Final|SPECIAL|OAD|OVA|TVアニメ).*$/gi, '')
+    .replace(/\s+\d+$/, '') // 末尾の数字
+    .replace(/[\s\-]+(?:II|III|IV|V|VI|VII|VIII|IX|X)$/, '') // 末尾のローマ数字
     .trim();
+
+  // 「呪術廻戦 死滅回游」などのケースに対応するため、
+  // スペースが含まれる場合は最初の単語をベースとする（ただし短すぎる場合は除く）
+  const parts = base.split(/\s+/);
+  if (parts.length > 1 && parts[0].length >= 2) {
+    // 最初の単語が「Re:」などの特殊なケースは除外
+    if (!/^(?:Re:)$/i.test(parts[0])) {
+      return parts[0];
+    }
+  }
+
+  return base;
 }
 

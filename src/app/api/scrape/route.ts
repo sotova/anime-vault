@@ -54,8 +54,8 @@ export async function POST(req: Request) {
         const copyMatch = fullText.match(/(?:©|(?:\(|（)[Cc](?:\)|）)).{1,150}/);
         const copyright = copyMatch ? copyMatch[0].trim() : '';
 
-        // 話数を取得: 全12話、全13回、全 12 話 など
-        const episodeMatch = fullText.match(/全\s*([0-9０-９]+)\s*[話回]/);
+        // 話数を取得: 全12話、12話、全13回、全 12 話 など
+        const episodeMatch = fullText.match(/(?:全\s*)?([0-9０-９]+)\s*[話回]/);
         let total_episodes = 0;
         if (episodeMatch) {
           total_episodes = parseInt(episodeMatch[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)), 10) || 0;
@@ -106,7 +106,6 @@ export async function POST(req: Request) {
         let official_site = '';
         let nextEl = $(el).next();
 
-        // 次のh2が来るまでテキストとリンク、画像を収集
         while (nextEl.length > 0 && nextEl[0].name !== 'h2' && nextEl[0].name !== 'style' && nextEl[0].name !== 'script') {
           contentText += nextEl.text() + '\n';
           if (!image_url) image_url = nextEl.find('img').attr('src') || '';
@@ -130,7 +129,7 @@ export async function POST(req: Request) {
         }
         synopsis = synopsis.substring(0, minIdx).trim().substring(0, 500);
 
-        const episodeMatch = contentText.match(/全\s*([0-9０-９]+)\s*[話回]/);
+        const episodeMatch = contentText.match(/(?:全\s*)?([0-9０-９]+)\s*[話回]/);
         let total_episodes = 0;
         if (episodeMatch) {
           total_episodes = parseInt(episodeMatch[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)), 10) || 0;
