@@ -6,7 +6,7 @@ import { Anime } from '@/types/anime';
 import { read, utils } from 'xlsx';
 
 export default function AdminPage() {
-  const { animeList, addAnime, supabaseStatus } = useAnimeData();
+  const { animeList, upsertAnime, isCloudSynced } = useAnimeData();
   const [scrapeUrl, setScrapeUrl] = useState('');
   const [isScraping, setIsScraping] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export default function AdminPage() {
         for (const anime of data.animeList) {
           // すでに同じタイトルの作品があればスキップ
           if (animeList.some(a => a.title === anime.title)) continue;
-          await addAnime(anime);
+          await upsertAnime(anime);
           count++;
         }
         alert(`${count} 件の作品を自動登録しました！`);
@@ -80,7 +80,7 @@ export default function AdminPage() {
           copyright: row['コピーライト'] || row['権利表記'] || '',
         };
 
-        await addAnime(newAnime);
+        await upsertAnime(newAnime);
         count++;
       }
       alert(`${count}件のアニメをインポートしました！`);
@@ -92,13 +92,13 @@ export default function AdminPage() {
     <div style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto' }}>
       <h1 style={{ color: '#d4a843', marginBottom: '32px' }}>管理パネル</h1>
 
-      {/* Supabase Status Bar */}
+      {/* Cloud Status Bar */}
       <div style={{ 
         padding: '10px 20px', 
         borderRadius: '8px', 
-        background: supabaseStatus === 'connected' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-        border: `1px solid ${supabaseStatus === 'connected' ? '#22c55e' : '#ef4444'}`,
-        color: supabaseStatus === 'connected' ? '#22c55e' : '#ef4444',
+        background: isCloudSynced ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+        border: `1px solid ${isCloudSynced ? '#22c55e' : '#ef4444'}`,
+        color: isCloudSynced ? '#22c55e' : '#ef4444',
         marginBottom: '32px',
         fontSize: '14px',
         display: 'flex',
@@ -106,7 +106,7 @@ export default function AdminPage() {
         gap: '10px'
       }}>
         <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor' }} />
-        {supabaseStatus === 'connected' ? 'クラウド同期中（正常）' : 'クラウド未接続（環境変数を確認してください）'}
+        {isCloudSynced ? 'クラウド同期中（正常）' : 'クラウド未接続（環境変数を確認してください）'}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
