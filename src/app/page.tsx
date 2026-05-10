@@ -30,7 +30,7 @@ export default function HomePage() {
     // ランダムに並び替えてからシリーズで重複排除
     const shuffled = animeList.slice().sort(() => 0.5 - Math.random());
     const grouped = shuffled.reduce((acc, a) => {
-      const base = getBaseTitle(a.title);
+      const base = getBaseTitle(a);
       if (!acc[base]) acc[base] = [];
       acc[base].push(a);
       return acc;

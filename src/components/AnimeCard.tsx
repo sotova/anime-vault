@@ -78,8 +78,8 @@ export function AnimeCard({ anime, showProgress = false, index = 0 }: AnimeCardP
 
             {/* Premium Gradient Overlay */}
             <div style={{
-              position: 'absolute', bottom: 0, left: 0, right: 0, height: '70%',
-              background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)',
+              position: 'absolute', bottom: 0, left: 0, right: 0, height: '60%',
+              background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%)',
               zIndex: 2
             }} />
 
@@ -94,7 +94,7 @@ export function AnimeCard({ anime, showProgress = false, index = 0 }: AnimeCardP
                 position: 'absolute', bottom: 0, left: 0, width: '100%',
                 padding: '12px', zIndex: 3, display: 'flex', flexDirection: 'column', gap: '4px',
                 boxSizing: 'border-box',
-                background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.8) 100%)'
+                background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 70%, transparent 100%)'
               }}>
               <motion.div 
                 variants={{

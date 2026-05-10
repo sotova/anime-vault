@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useAnimeData } from '@/hooks/useAnimeData';
 import { Anime } from '@/types/anime';
-import { read, utils } from 'xlsx';
+import { utils } from 'xlsx';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { getBaseTitle } from '@/utils/animeUtils';
 
 const INITIAL_FORM: Omit<Anime, 'created_at'> = {
   id: '', title: '', tags: [], synopsis: '', image_url: '', pv_url: '',
@@ -24,13 +26,38 @@ function getVal(row: Record<string, unknown>, candidates: string[]): string {
   return '';
 }
 
-export default function AdminPage() {
+function AdminContent() {
   const { animeList, upsertAnime, bulkUpsert, deleteAnime, isCloudSynced } = useAnimeData();
   const [form, setForm] = useState(INITIAL_FORM);
   const [tagInput, setTagInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [seasonFilter, setSeasonFilter] = useState('');
   const [emptyFilter, setEmptyFilter] = useState('');
+  
+  const [activeTab, setActiveTab] = useState<'edit' | 'merge'>('edit');
+  const [baseAnimeId, setBaseAnimeId] = useState('');
+  const [targetAnimeIds, setTargetAnimeIds] = useState<string[]>([]);
+  
+  const searchParams = useSearchParams();
+  const editId = searchParams.get('editId');
+
+  const startEdit = (anime: Anime) => {
+    setForm({ ...anime });
+    setTagInput(anime.tags.join(', '));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (editId && animeList.length > 0) {
+      const target = animeList.find(a => a.id === editId);
+      if (target) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setActiveTab('edit');
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        startEdit(target);
+      }
+    }
+  }, [editId, animeList]);
 
   const uniqueSeasons = Array.from(new Set(animeList.map(a => a.season))).filter(Boolean).sort().reverse();
 
@@ -57,11 +84,7 @@ export default function AdminPage() {
     alert('保存しました');
   };
 
-  const startEdit = (anime: Anime) => {
-    setForm({ ...anime });
-    setTagInput(anime.tags.join(', '));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -141,21 +164,35 @@ export default function AdminPage() {
         </div>
       </header>
 
-      {/* === Main Form === */}
-      <div style={{
-        background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '28px',
-        padding: '40px', marginBottom: '60px', boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
-      }}>
-        <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#d4a843', marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ width: '4px', height: '18px', background: '#d4a843', borderRadius: '2px', display: 'inline-block' }} />
-          {form.id ? '作品を編集' : '新規登録'}
-        </h2>
+      {/* 2カラム全体レイアウト */}
+      <div style={{ display: 'flex', gap: '40px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
 
-        <form onSubmit={handleSave}>
-          {/* 2カラム全体レイアウト */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '40px' }}>
+        {/* 左：フォーム (Sticky) */}
+        <div style={{
+          flex: '1 1 400px', maxWidth: '450px', position: 'sticky', top: '40px',
+          background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '28px',
+          padding: '30px', boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+          maxHeight: 'calc(100vh - 80px)', overflowY: 'auto'
+        }}>
+          
+          {/* タブ切り替え */}
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '32px', borderBottom: '1px solid #222', paddingBottom: '10px' }}>
+            <button onClick={() => setActiveTab('edit')} style={{
+              background: 'transparent', border: 'none', color: activeTab === 'edit' ? '#d4a843' : '#666',
+              fontSize: '15px', fontWeight: 'bold', cursor: 'pointer'
+            }}>新規登録 / 編集</button>
+            <button onClick={() => setActiveTab('merge')} style={{
+              background: 'transparent', border: 'none', color: activeTab === 'merge' ? '#d4a843' : '#666',
+              fontSize: '15px', fontWeight: 'bold', cursor: 'pointer'
+            }}>シリーズ結合</button>
+          </div>
 
-            {/* 左：テキスト入力群 */}
+          {activeTab === 'edit' ? (
+            <form onSubmit={handleSave}>
+              <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#d4a843', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ width: '4px', height: '18px', background: '#d4a843', borderRadius: '2px', display: 'inline-block' }} />
+                {form.id ? '作品を編集' : '新規登録'}
+              </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
               {/* タイトル */}
@@ -227,8 +264,8 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* 右：画像プレビュー + XLSX */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* 画像プレビュー + XLSX */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '30px' }}>
 
               {/* 画像プレビュー（3:4） */}
               <div>
@@ -286,12 +323,84 @@ export default function AdminPage() {
                 )}
               </div>
             </div>
-          </div>
-        </form>
-      </div>
+          </form>
+          ) : (
+            <div>
+              <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#d4a843', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ width: '4px', height: '18px', background: '#d4a843', borderRadius: '2px', display: 'inline-block' }} />
+                シリーズ結合
+              </h2>
+              <p style={{ fontSize: '12px', color: '#888', marginBottom: '20px', lineHeight: 1.6 }}>
+                2期や別シーズンを手動で1つのアニメシリーズとして結合します。
+              </p>
 
-      {/* === Registered List === */}
-      <section>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={labelStyle}>親作品 (ベース)</label>
+                <select style={inputStyle} value={baseAnimeId} onChange={e => setBaseAnimeId(e.target.value)}>
+                  <option value="">選択してください...</option>
+                  {animeList.map(a => <option key={a.id} value={a.id}>{a.title}</option>)}
+                </select>
+              </div>
+
+              {baseAnimeId && (
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={labelStyle}>結合する作品 (複数選択可)</label>
+                  <div style={{ maxHeight: '200px', overflowY: 'auto', background: '#111', border: '1px solid #333', borderRadius: '8px', padding: '10px' }}>
+                    {animeList.filter(a => a.id !== baseAnimeId).map(a => (
+                      <label key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', borderBottom: '1px solid #222', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={targetAnimeIds.includes(a.id)}
+                          onChange={e => {
+                            if (e.target.checked) setTargetAnimeIds([...targetAnimeIds, a.id]);
+                            else setTargetAnimeIds(targetAnimeIds.filter(id => id !== a.id));
+                          }}
+                        />
+                        <span style={{ fontSize: '13px' }}>{a.title}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <button 
+                onClick={async () => {
+                  if (!baseAnimeId || targetAnimeIds.length === 0) return alert('親作品と結合先を選んでください');
+                  const baseAnime = animeList.find(a => a.id === baseAnimeId);
+                  if (!baseAnime) return;
+                  const baseTitleStr = getBaseTitle(baseAnime);
+                  
+                  const updates = targetAnimeIds.map(id => {
+                    const target = animeList.find(a => a.id === id);
+                    if (!target) return null;
+                    const newTags = target.tags.filter(t => !t.startsWith('series:'));
+                    newTags.push(`series:${baseTitleStr}`);
+                    return { ...target, tags: newTags };
+                  }).filter((x): x is Anime => x !== null);
+                  
+                  const newBaseTags = baseAnime.tags.filter(t => !t.startsWith('series:'));
+                  if (!newBaseTags.includes(`series:${baseTitleStr}`)) {
+                    newBaseTags.push(`series:${baseTitleStr}`);
+                    updates.push({ ...baseAnime, tags: newBaseTags });
+                  }
+                  
+                  await bulkUpsert(updates);
+                  alert('結合しました！詳細画面でシーズンスイッチャーが表示されます。');
+                  setTargetAnimeIds([]);
+                }}
+                disabled={!baseAnimeId || targetAnimeIds.length === 0}
+                style={{
+                  width: '100%', padding: '16px', background: (!baseAnimeId || targetAnimeIds.length === 0) ? '#333' : '#d4a843', color: '#000',
+                  borderRadius: '14px', border: 'none', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer'
+                }}
+              >
+                結合を実行
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* 右：Registered List */}
+        <div style={{ flex: '2 1 600px', minWidth: 0 }}>
+          <section>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
           <h2 style={{ fontSize: '18px', color: '#d4a843', margin: 0 }}>
             作品リスト <span style={{ color: '#444', fontSize: '14px', fontWeight: 'normal' }}>({filteredList.length}件 / 全{animeList.length}件)</span>
@@ -368,7 +477,17 @@ export default function AdminPage() {
             </div>
           ))}
         </div>
-      </section>
+          </section>
+        </div>
+      </div>
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '60px', color: '#999', textAlign: 'center' }}>Loading...</div>}>
+      <AdminContent />
+    </Suspense>
   );
 }

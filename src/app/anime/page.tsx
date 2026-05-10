@@ -46,7 +46,7 @@ function AnimeListContent() {
 
     // 同じ作品の別シーズンをグループ化（代表1つだけ表示する）
     const grouped = list.reduce((acc, a) => {
-      const base = getBaseTitle(a.title);
+      const base = getBaseTitle(a);
       if (!acc[base]) acc[base] = [];
       acc[base].push(a);
       return acc;

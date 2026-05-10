@@ -29,7 +29,7 @@ export default function AnimeDetailPage() {
   const { animeList, updateUserData, removeFromLibrary } = useAnimeData();
   const anime = animeList.find((a) => a.id === id);
 
-  const status = anime?.userData?.status || '見たい';
+
   const rating = anime?.userData?.rating || 0;
   const progress = anime?.userData?.progress || 0;
 
