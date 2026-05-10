@@ -50,16 +50,23 @@ export async function POST(req: Request) {
         // 全テキストからコピーライト・あらすじを抽出
         const fullText = $el.text();
         
-        // コピーライト: (C)〇〇 or ©〇〇 パターン
-        const copyMatch = fullText.match(/[\(（]?[Cc©][\)）]?.{1,200}/);
-        const copyright = copyMatch ? copyMatch[0].trim().substring(0, 150) : '';
+        // コピーライト: ©〇〇 or (C)〇〇 パターン
+        const copyMatch = fullText.match(/(?:©|(?:\(|（)[Cc](?:\)|）)).{1,150}/);
+        const copyright = copyMatch ? copyMatch[0].trim() : '';
+
+        // 話数を取得: 全12話、全13回など
+        const episodeMatch = fullText.match(/全(\d+)[話回]/);
+        const total_episodes = episodeMatch ? parseInt(episodeMatch[1], 10) : 0;
 
         // あらすじ: 「作品名〇〇」の前のテキスト部分
         const synopsisMatch = fullText.match(/^([\s\S]*?)作品名/);
         const synopsis = synopsisMatch ? synopsisMatch[1].replace(title, '').trim().substring(0, 500) : '';
 
         // 公式サイトURL
-        const official_site = $el.find('a:contains("公式サイト")').attr('href') || '';
+        let official_site = '';
+        $el.find('a').each((_, a) => {
+          if ($(a).text().includes('公式サイト')) official_site = $(a).attr('href') || official_site;
+        });
 
         animeList.push({
           id: Math.random().toString(36).slice(2),
@@ -71,7 +78,7 @@ export async function POST(req: Request) {
           season,
           tags: [season].filter(Boolean),
           pv_url: '',
-          total_episodes: 0,
+          total_episodes,
         });
       } catch {
         // block errors ignored
@@ -82,8 +89,8 @@ export async function POST(req: Request) {
     if (animeList.length === 0) {
       $('h2').each((_, el) => {
         const title = $(el).text().trim();
-        // 目次や関係ないh2を除外
-        if (!title || title.includes('目次') || title.includes('一覧') || title.includes('関連')) return;
+        // 関係ないh2（目次、ランキング、最新記事など）を除外
+        if (!title || /目次|一覧|関連|最新記事|ランキング|おすすめ|特集|新着ラジオ|閲覧履歴/i.test(title)) return;
 
         let contentText = '';
         let image_url = '';
@@ -94,13 +101,20 @@ export async function POST(req: Request) {
         while (nextEl.length > 0 && nextEl[0].name !== 'h2' && nextEl[0].name !== 'style' && nextEl[0].name !== 'script') {
           contentText += nextEl.text() + '\n';
           if (!image_url) image_url = nextEl.find('img').attr('src') || '';
-          if (!official_site) official_site = nextEl.find('a:contains("公式サイト")').attr('href') || '';
+          if (!official_site) {
+            nextEl.find('a').each((_, a) => {
+              if ($(a).text().includes('公式サイト')) official_site = $(a).attr('href') || official_site;
+            });
+          }
           nextEl = nextEl.next();
         }
 
-        const copyMatch = contentText.match(/[\(（]?[Cc©][\)）]?.{1,200}/);
-        const copyright = copyMatch ? copyMatch[0].trim().substring(0, 150) : '';
+        const copyMatch = contentText.match(/(?:©|(?:\(|（)[Cc](?:\)|）)).{1,150}/);
+        const copyright = copyMatch ? copyMatch[0].trim() : '';
         const synopsis = contentText.replace(title, '').replace(/[\n\t\r]/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 500);
+
+        const episodeMatch = contentText.match(/全(\d+)[話回]/);
+        const total_episodes = episodeMatch ? parseInt(episodeMatch[1], 10) : 0;
 
         if (image_url && !image_url.startsWith('http')) image_url = `https://www.animatetimes.com${image_url}`;
 
@@ -114,7 +128,7 @@ export async function POST(req: Request) {
           season,
           tags: [season].filter(Boolean),
           pv_url: '',
-          total_episodes: 0,
+          total_episodes,
         });
       });
     }

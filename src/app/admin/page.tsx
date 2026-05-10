@@ -28,6 +28,16 @@ export default function AdminPage() {
   const { animeList, upsertAnime, bulkUpsert, deleteAnime, isCloudSynced } = useAnimeData();
   const [form, setForm] = useState(INITIAL_FORM);
   const [tagInput, setTagInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [seasonFilter, setSeasonFilter] = useState('');
+
+  const uniqueSeasons = Array.from(new Set(animeList.map(a => a.season))).filter(Boolean).sort().reverse();
+
+  const filteredList = animeList.filter(a => {
+    if (seasonFilter && a.season !== seasonFilter) return false;
+    if (searchQuery && !a.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    return true;
+  });
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -274,11 +284,29 @@ export default function AdminPage() {
 
       {/* === Registered List === */}
       <section>
-        <h2 style={{ fontSize: '18px', color: '#d4a843', marginBottom: '24px' }}>
-          作品リスト <span style={{ color: '#444', fontSize: '14px', fontWeight: 'normal' }}>({animeList.length}件)</span>
-        </h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+          <h2 style={{ fontSize: '18px', color: '#d4a843', margin: 0 }}>
+            作品リスト <span style={{ color: '#444', fontSize: '14px', fontWeight: 'normal' }}>({filteredList.length}件 / 全{animeList.length}件)</span>
+          </h2>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <input 
+              style={{ ...inputStyle, padding: '10px 14px', width: '200px' }} 
+              placeholder="タイトルで検索..." 
+              value={searchQuery} 
+              onChange={e => setSearchQuery(e.target.value)} 
+            />
+            <select 
+              style={{ ...inputStyle, padding: '10px 14px', width: '150px', cursor: 'pointer' }}
+              value={seasonFilter}
+              onChange={e => setSeasonFilter(e.target.value)}
+            >
+              <option value="">全ての放送季</option>
+              {uniqueSeasons.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+        </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {animeList.map(a => (
+          {filteredList.map(a => (
             <div key={a.id} style={{
               background: '#0d0d0d', padding: '14px 24px', border: '1px solid #1e1e1e',
               borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '20px',
