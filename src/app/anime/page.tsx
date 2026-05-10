@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { useAnimeData } from '@/hooks/useAnimeData';
 import { AnimeCard } from '@/components/AnimeCard';
 import { motion } from 'framer-motion';
+import { getBaseTitle } from '@/utils/animeUtils';
+import { Anime } from '@/types/anime';
 
 type SortKey = 'title' | 'season' | 'newest';
 
@@ -42,7 +44,29 @@ function AnimeListContent() {
       return 0;
     });
 
-    return list;
+    // 同じ作品の別シーズンをグループ化（代表1つだけ表示する）
+    const grouped = list.reduce((acc, a) => {
+      const base = getBaseTitle(a.title);
+      if (!acc[base]) acc[base] = [];
+      acc[base].push(a);
+      return acc;
+    }, {} as Record<string, Anime[]>);
+
+    // 各グループの中で最も古いシーズン（一番最初のシーズン）を代表として表示、新着順などのソート順は維持する
+    const deduplicated = Object.values(grouped).map(group => {
+      // 内部的には放送季の古い順（Season 1など）を代表にする
+      return group.sort((a, b) => (a.season || '').localeCompare(b.season || ''))[0];
+    });
+
+    // 再度外側のソートを適用する（代表作品だけで）
+    deduplicated.sort((a, b) => {
+      if (sortBy === 'title') return a.title.localeCompare(b.title, 'ja');
+      if (sortBy === 'season') return (b.season || '').localeCompare(a.season || '');
+      if (sortBy === 'newest') return (b.created_at || '').localeCompare(a.created_at || '');
+      return 0;
+    });
+
+    return deduplicated;
   }, [animeList, search, sortBy]);
 
   if (loading) return <div style={{ padding: '60px', color: '#999', textAlign: 'center' }}>読み込み中...</div>;

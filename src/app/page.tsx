@@ -5,6 +5,8 @@ import { AnimeCard } from '@/components/AnimeCard';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRef, useState, useEffect, useMemo } from 'react';
+import { getBaseTitle } from '@/utils/animeUtils';
+import { Anime } from '@/types/anime';
 
 // ユーザー様の形式「2026 春」に合わせて取得
 function getCurrentSeason() {
@@ -25,8 +27,21 @@ export default function HomePage() {
   const [recommended, setRecommended] = useState<typeof animeList>([]);
 
   useEffect(() => {
+    // ランダムに並び替えてからシリーズで重複排除
+    const shuffled = animeList.slice().sort(() => 0.5 - Math.random());
+    const grouped = shuffled.reduce((acc, a) => {
+      const base = getBaseTitle(a.title);
+      if (!acc[base]) acc[base] = [];
+      acc[base].push(a);
+      return acc;
+    }, {} as Record<string, Anime[]>);
+    
+    const uniqueRecommended = Object.values(grouped)
+      .map(group => group.sort((a, b) => (a.season || '').localeCompare(b.season || ''))[0])
+      .slice(0, 15);
+      
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setRecommended(animeList.slice().sort(() => 0.5 - Math.random()).slice(0, 15));
+    setRecommended(uniqueRecommended);
   }, [animeList]);
 
   if (loading) return <div style={{ padding: '60px', color: '#999', textAlign: 'center' }}>読み込み中...</div>;

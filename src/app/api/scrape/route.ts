@@ -39,7 +39,7 @@ export async function POST(req: Request) {
         // タイトル
         const title = $el.find('.tag_details_block_title a').first().text().trim()
           || $el.find('h2').first().text().trim();
-        if (!title) return;
+        if (!title || title.includes('再放送')) return;
 
         // 画像URL（絶対URLに変換）
         let image_url = $el.find('img').first().attr('src') || '';
@@ -89,8 +89,8 @@ export async function POST(req: Request) {
     if (animeList.length === 0) {
       $('h2').each((_, el) => {
         const title = $(el).text().trim();
-        // 関係ないh2（目次、ランキング、最新記事など）を除外
-        if (!title || /目次|一覧|関連|最新記事|ランキング|おすすめ|特集|新着ラジオ|閲覧履歴/i.test(title)) return;
+        // 関係ないh2（目次、ランキング、最新記事など）を除外、また再放送も除外
+        if (!title || /目次|一覧|関連|最新記事|ランキング|おすすめ|特集|新着ラジオ|閲覧履歴|再放送/i.test(title)) return;
 
         let contentText = '';
         let image_url = '';

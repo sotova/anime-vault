@@ -7,6 +7,7 @@ import { StarRating } from '@/components/StarRating';
 import { AnimeStatus } from '@/types/anime';
 import { motion } from 'framer-motion';
 import { useMemo } from 'react';
+import { getBaseTitle } from '@/utils/animeUtils';
 
 function getYouTubeId(url: string) {
   if (!url) return null;
@@ -34,9 +35,19 @@ export default function AnimeDetailPage() {
 
   const similar = useMemo(() => {
     if (!anime) return [];
+    const base = getBaseTitle(anime.title);
     return animeList
-      .filter((a) => a.id !== anime.id && a.tags.some((t) => anime.tags.includes(t)))
+      .filter((a) => a.id !== anime.id && getBaseTitle(a.title) !== base && a.tags.some((t) => anime.tags.includes(t)))
       .slice(0, 6);
+  }, [anime, animeList]);
+
+  // 同じシリーズの別シーズンを取得
+  const otherSeasons = useMemo(() => {
+    if (!anime) return [];
+    const base = getBaseTitle(anime.title);
+    return animeList
+      .filter((a) => getBaseTitle(a.title) === base)
+      .sort((a, b) => (a.season || '').localeCompare(b.season || ''));
   }, [anime, animeList]);
 
   if (!anime) {
@@ -56,7 +67,24 @@ export default function AnimeDetailPage() {
         {/* Left: Info */}
         <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
           <h1 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '16px' }}>{anime.title}</h1>
-          {anime.season && <div style={{ fontSize: '16px', color: '#d4a843', marginBottom: '16px', fontWeight: 'bold' }}>{anime.season}</div>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+            {anime.season && <div style={{ fontSize: '16px', color: '#d4a843', fontWeight: 'bold' }}>{anime.season}</div>}
+            
+            {otherSeasons.length > 1 && (
+              <select 
+                value={anime.id}
+                onChange={(e) => router.push(`/anime/${e.target.value}`)}
+                style={{
+                  padding: '6px 12px', background: '#1a1a1a', border: '1px solid #333', 
+                  borderRadius: '6px', color: '#fff', fontSize: '13px', outline: 'none', cursor: 'pointer'
+                }}
+              >
+                {otherSeasons.map(s => (
+                  <option key={s.id} value={s.id}>{s.title}</option>
+                ))}
+              </select>
+            )}
+          </div>
 
           <p style={{ fontSize: '15px', color: '#ccc', lineHeight: '1.8', marginBottom: '24px' }}>
             {anime.synopsis || 'あらすじはまだ登録されていません。'}
