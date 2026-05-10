@@ -18,30 +18,32 @@ export default function AdminPage() {
 
   // 手動保存
   const handleSave = async () => {
-    if (!form.title) return;
+    if (!form.title) return alert('タイトルを入力してください');
     const finalData = { ...form, id: form.id || Math.random().toString(36).slice(2) };
     await upsertAnime(finalData);
     setForm(INITIAL_FORM);
     setTagInput('');
+    alert('保存しました');
   };
 
-  // URLから自動取得
+  // 一括取得・登録
   const handleAutoImport = async () => {
     if (!scrapeUrl) return;
     setIsProcessing(true);
     try {
       const res = await fetch('/api/scrape', { method: 'POST', body: JSON.stringify({ url: scrapeUrl }) });
       const data = await res.json();
+      if (data.error) throw new Error(data.error);
       if (data.animeList?.length > 0) {
         await bulkUpsert(data.animeList);
-        alert(`${data.animeList.length}件を自動追加しました！`);
+        alert(`${data.animeList.length}件を追加しました！`);
         setScrapeUrl('');
-      } else { alert('作品が見つかりませんでした。'); }
-    } catch { alert('取得失敗'); }
+      }
+    } catch (e: any) { alert(e.message); }
     finally { setIsProcessing(false); }
   };
 
-  // XLSX一括インポート
+  // XLSXインポート (全件確実に登録)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -50,10 +52,11 @@ export default function AdminPage() {
       const bstr = evt.target?.result;
       const wb = read(bstr, { type: 'binary' });
       const data = utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]) as any[];
+      
       const newList = data.map(row => ({
         id: Math.random().toString(36).slice(2),
-        title: row['タイトル'] || row['作品名'] || row['Title'],
-        tags: (row['タグ'] || row['Tags'] || '').split(',').map((s: any) => s.trim()).filter(Boolean),
+        title: row['タイトル'] || row['作品名'] || row['Title'] || '',
+        tags: (row['タグ'] || row['Tags'] || '').toString().split(',').map((s: string) => s.trim()).filter(Boolean),
         synopsis: row['あらすじ'] || row['Synopsis'] || '',
         image_url: row['画像'] || row['Image'] || '',
         pv_url: row['PV'] || '',
@@ -62,65 +65,76 @@ export default function AdminPage() {
         official_site: row['公式サイト'] || '',
         copyright: row['コピーライト'] || ''
       })).filter(a => a.title);
-      await bulkUpsert(newList);
-      alert(`${newList.length}件をすべて追加しました！`);
+
+      if (newList.length > 0) {
+        await bulkUpsert(newList);
+        alert(`${newList.length}件をすべて追加しました！`);
+      }
     };
     reader.readAsBinaryString(file);
   };
 
   return (
-    <div style={{ padding: '40px', background: '#000', minHeight: '100vh', color: '#fff' }}>
-      
-      {/* 1. Mockup Design UI */}
+    <div style={{ padding: '40px', background: '#000', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif' }}>
+      <h1 style={{ color: '#d4a843', marginBottom: '40px', fontSize: '28px', fontWeight: 'bold' }}>Anime Manager</h1>
+
+      {/* メインの入力エリア (画像のデザインを完全再現) */}
       <div style={{ 
-        background: '#444', padding: '40px', borderRadius: '60px', 
-        display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', 
-        maxWidth: '1000px', margin: '0 auto 40px' 
+        background: '#333', padding: '60px 40px', borderRadius: '80px', 
+        display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '30px', 
+        maxWidth: '1100px', margin: '0 auto 60px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          <input className="mock-input" placeholder="アニメのタイトルを入力" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
-          <input className="mock-input" placeholder="放送日を入力(もしくは季を選択)" value={form.season} onChange={e => setForm({...form, season: e.target.value})} />
-          <textarea className="mock-input" style={{ height: '200px' }} placeholder="アニメのあらすじを入力" value={form.synopsis} onChange={e => setForm({...form, synopsis: e.target.value})} />
-          <input className="mock-input" placeholder="タグの選択または追加" value={tagInput} onChange={e => {
+        {/* 左カラム */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+          <input className="img-input" placeholder="アニメのタイトルを入力" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
+          <input className="img-input" placeholder="放送日を入力(もしくは季を選択)" value={form.season} onChange={e => setForm({...form, season: e.target.value})} />
+          <textarea className="img-input" style={{ height: '280px', resize: 'none' }} placeholder="アニメのあらすじを入力" value={form.synopsis} onChange={e => setForm({...form, synopsis: e.target.value})} />
+          <input className="img-input" placeholder="タグの選択または追加" value={tagInput} onChange={e => {
             setTagInput(e.target.value);
             setForm({...form, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean)});
           }} />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          <div className="mock-box" style={{ height: '200px' }}>
-            <textarea placeholder="アニメの画像を挿入" value={form.image_url} onChange={e => setForm({...form, image_url: e.target.value})} />
+
+        {/* 右カラム */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+          <div className="img-box" style={{ height: '280px' }}>
+            <textarea placeholder="アニメの画像を挿入" value={form.image_url} onChange={e => setForm({...form, image_url: e.target.value})} style={{ background: 'transparent', border: 'none', width: '100%', height: '100%', color: '#fff', textAlign: 'center', fontSize: '18px', outline: 'none', resize: 'none' }} />
           </div>
-          <div className="mock-box" style={{ height: '100px' }}>
-            <input placeholder="アニメのPVを挿入" value={form.pv_url} onChange={e => setForm({...form, pv_url: e.target.value})} />
+          <div className="img-box" style={{ height: '120px' }}>
+            <input placeholder="アニメのPVを挿入" value={form.pv_url} onChange={e => setForm({...form, pv_url: e.target.value})} style={{ background: 'transparent', border: 'none', width: '100%', color: '#fff', textAlign: 'center', fontSize: '18px', outline: 'none' }} />
           </div>
-          <input className="mock-input" style={{ textAlign: 'center' }} placeholder="総話数" type="number" value={form.total_episodes || ''} onChange={e => setForm({...form, total_episodes: parseInt(e.target.value) || 0})} />
-          <button onClick={handleSave} style={{ marginTop: 'auto', padding: '15px', background: '#d4a843', color: '#000', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', border: 'none' }}>保存</button>
+          <input className="img-input" style={{ textAlign: 'center' }} placeholder="総話数" type="number" value={form.total_episodes || ''} onChange={e => setForm({...form, total_episodes: parseInt(e.target.value) || 0})} />
+          
+          <div style={{ display: 'flex', gap: '10px', marginTop: 'auto' }}>
+            <button onClick={handleSave} style={{ flex: 1, padding: '20px', background: '#000', color: '#fff', borderRadius: '15px', border: 'none', fontSize: '18px', fontWeight: 'bold', cursor: 'pointer' }}>登録・保存</button>
+            {form.id && <button onClick={() => { setForm(INITIAL_FORM); setTagInput(''); }} style={{ padding: '20px', background: '#444', color: '#fff', borderRadius: '15px', border: 'none', cursor: 'pointer' }}>取消</button>}
+          </div>
         </div>
       </div>
 
-      {/* 2. Import Section */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', maxWidth: '1000px', margin: '0 auto 40px' }}>
-        <div style={{ background: '#111', padding: '20px', borderRadius: '20px', border: '1px solid #333' }}>
-          <div style={{ fontSize: '14px', marginBottom: '10px', color: '#d4a843' }}>URLから一括取得 (アニメイトタイムズ)</div>
-          <input placeholder="URLを入力..." value={scrapeUrl} onChange={e => setScrapeUrl(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #444', borderRadius: '8px', color: '#fff', marginBottom: '10px' }} />
-          <button onClick={handleAutoImport} disabled={isProcessing} style={{ width: '100%', padding: '10px', background: '#333', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>{isProcessing ? '取得中...' : '自動取得して登録'}</button>
+      {/* インポート機能エリア (邪魔にならない場所に配置) */}
+      <div style={{ maxWidth: '1100px', margin: '0 auto 60px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div style={{ background: '#111', padding: '25px', borderRadius: '25px', border: '1px solid #222' }}>
+          <div style={{ color: '#d4a843', marginBottom: '15px', fontWeight: 'bold' }}>🌐 URLから自動一括登録</div>
+          <input placeholder="アニメイトタイムズのURLを入力..." value={scrapeUrl} onChange={e => setScrapeUrl(e.target.value)} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', borderRadius: '10px', color: '#fff', marginBottom: '15px' }} />
+          <button onClick={handleAutoImport} disabled={isProcessing} style={{ width: '100%', padding: '12px', background: '#d4a843', color: '#000', borderRadius: '10px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>{isProcessing ? '取得・登録中...' : '自動取得して登録'}</button>
         </div>
-        <div style={{ background: '#111', padding: '20px', borderRadius: '20px', border: '1px solid #333' }}>
-          <div style={{ fontSize: '14px', marginBottom: '10px', color: '#d4a843' }}>XLSXファイルから一括登録</div>
-          <input type="file" accept=".xlsx" onChange={handleFileUpload} style={{ color: '#888', fontSize: '12px' }} />
+        <div style={{ background: '#111', padding: '25px', borderRadius: '25px', border: '1px solid #222', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ color: '#d4a843', marginBottom: '15px', fontWeight: 'bold' }}>📊 Excelファイル(XLSX)インポート</div>
+          <input type="file" accept=".xlsx" onChange={handleFileUpload} style={{ color: '#888' }} />
         </div>
       </div>
 
-      {/* 3. Manage List */}
-      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        <div style={{ fontSize: '20px', marginBottom: '20px', color: '#d4a843' }}>登録済み作品 ({animeList.length})</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '15px' }}>
+      {/* 作品管理リスト (確認ダイアログなしで削除) */}
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+        <h2 style={{ color: '#d4a843', marginBottom: '25px' }}>登録済み作品一覧 ({animeList.length})</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
           {animeList.map(a => (
-            <div key={a.id} style={{ background: '#111', padding: '15px', borderRadius: '12px', border: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.title}</span>
+            <div key={a.id} style={{ background: '#111', padding: '15px', borderRadius: '15px', border: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.title}</span>
               <div style={{ display: 'flex', gap: '5px' }}>
-                <button onClick={() => { setForm({...a}); setTagInput(a.tags.join(', ')); }} style={{ padding: '4px 8px', background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>編集</button>
-                <button onClick={() => deleteAnime(a.id)} style={{ padding: '4px 8px', background: '#551111', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>削除</button>
+                <button onClick={() => { setForm({...a}); setTagInput(a.tags.join(', ')); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '6px 12px', background: '#333', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>編集</button>
+                <button onClick={() => deleteAnime(a.id)} style={{ padding: '6px 12px', background: '#551111', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>削除</button>
               </div>
             </div>
           ))}
@@ -128,16 +142,14 @@ export default function AdminPage() {
       </div>
 
       <style jsx>{`
-        .mock-input {
-          width: 100%; padding: 15px; background: #000; border: none; border-radius: 12px; color: #fff; font-size: 16px; outline: none; box-sizing: border-box;
+        .img-input {
+          width: 100%; padding: 20px; background: #000; border: none; border-radius: 20px; color: #fff; font-size: 18px; outline: none; box-sizing: border-box;
         }
-        .mock-box {
-          background: #000; border-radius: 24px; padding: 15px; display: flex; flex-direction: column;
+        .img-box {
+          background: #000; border-radius: 30px; padding: 20px; display: flex; align-items: center; justify-content: center;
         }
-        .mock-box textarea {
-          width: 100%; height: 100%; background: transparent; border: none; color: #fff; resize: none; outline: none; font-size: 16px;
-        }
-        ::placeholder { color: #aaa; text-align: center; display: flex; align-items: center; justify-content: center; height: 100%; }
+        .img-input::placeholder { color: #666; text-align: center; }
+        .img-box textarea::placeholder, .img-box input::placeholder { color: #666; }
       `}</style>
     </div>
   );
