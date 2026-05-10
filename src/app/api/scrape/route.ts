@@ -5,62 +5,113 @@ export async function POST(req: Request) {
   try {
     const { url } = await req.json();
 
-    if (!url.includes('animatetimes.com')) {
+    if (!url || !url.includes('animatetimes.com')) {
       return NextResponse.json({ error: 'アニメイトタイムズのURLを入力してください' }, { status: 400 });
     }
 
-    const response = await fetch(url, {
+    const res = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'ja,en-US;q=0.9',
         'Referer': 'https://www.animatetimes.com/',
-        'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
       },
-      next: { revalidate: 0 } // キャッシュを無効化
     });
 
-    if (!response.ok) throw new Error('サイトへのアクセスに失敗しました');
-    
-    const html = await response.text();
+    if (!res.ok) throw new Error(`HTTPエラー: ${res.status}`);
+    const html = await res.text();
     const $ = cheerio.load(html);
+
+    // ページタイトルからシーズンを取得
+    const pageTitle = $('title').text();
+    let season = '';
+    const seasonMatch = pageTitle.match(/(\d{4})年?([春夏秋冬])/);
+    if (seasonMatch) season = `${seasonMatch[1]} ${seasonMatch[2]}`;
+
     const animeList: any[] = [];
 
-    // アニメイトタイムズの全パターンを網羅するセレクタ
-    const items = $('section.c-tag-detail, .tag_details_block, .c-tag-detail');
+    // アニメイトタイムズの各作品ブロック
+    // 作品ブロックは .tag_details_contents 内に並ぶ div
+    $('.tag_details_contents .tag_details_block').each((_, el) => {
+      try {
+        const $el = $(el);
+        
+        // タイトル
+        const title = $el.find('.tag_details_block_title a').first().text().trim()
+          || $el.find('h2').first().text().trim();
+        if (!title) return;
 
-    items.each((_, el) => {
-      const title = $(el).find('h2, .c-tag-detail__title, .tag_details_block_title').first().text().trim();
-      if (!title) return;
+        // 画像URL（絶対URLに変換）
+        let image_url = $el.find('img').first().attr('src') || '';
+        if (image_url && !image_url.startsWith('http')) {
+          image_url = `https://www.animatetimes.com${image_url}`;
+        }
 
-      const image_url = $(el).find('img').first().attr('src') || '';
-      const synopsis = $(el).find('.c-tag-detail__description, .tag_details_block_text').first().text().trim();
-      const copyright = $(el).find('.c-tag-detail__copy, .c-tag-detail__copyright').first().text().trim();
-      const official_site = $(el).find('a:contains("公式サイト")').attr('href') || '';
+        // 全テキストからコピーライト・あらすじを抽出
+        const fullText = $el.text();
+        
+        // コピーライト: (C)〇〇 or ©〇〇 パターン
+        const copyMatch = fullText.match(/[\(（]?[Cc©][\)）]?.{1,200}/);
+        const copyright = copyMatch ? copyMatch[0].trim().substring(0, 150) : '';
 
-      const pageTitle = $('title').text();
-      let season = '';
-      const seasonMatch = pageTitle.match(/\d{4}年?\s*[春夏秋冬]/);
-      if (seasonMatch) season = seasonMatch[0].replace('年', '');
+        // あらすじ: 「作品名〇〇」の前のテキスト部分
+        const synopsisMatch = fullText.match(/^([\s\S]*?)作品名/);
+        const synopsis = synopsisMatch ? synopsisMatch[1].replace(title, '').trim().substring(0, 500) : '';
 
-      animeList.push({
-        id: Math.random().toString(36).slice(2),
-        title,
-        synopsis: synopsis.substring(0, 800),
-        image_url,
-        copyright,
-        official_site,
-        season,
-        tags: [season].filter(Boolean),
-        pv_url: '',
-        total_episodes: 0
-      });
+        // 公式サイトURL
+        const official_site = $el.find('a:contains("公式サイト")').attr('href') || '';
+
+        animeList.push({
+          id: Math.random().toString(36).slice(2),
+          title,
+          synopsis,
+          image_url,
+          copyright,
+          official_site,
+          season,
+          tags: [season].filter(Boolean),
+          pv_url: '',
+          total_episodes: 0,
+        });
+      } catch (_) {}
     });
 
+    // .tag_details_block が存在しない場合のフォールバック
     if (animeList.length === 0) {
-      return NextResponse.json({ error: '作品を検出できませんでした。URLまたはサイトの構造を確認してください。' }, { status: 404 });
+      // タイトル一覧からリンクを取得
+      const titleLinks: string[] = [];
+      $('a[href*="#"]').each((_, a) => {
+        const text = $(a).text().trim();
+        const href = $(a).attr('href') || '';
+        if (text && href.includes(url.split('?')[1]) && !titleLinks.includes(text)) {
+          titleLinks.push(text);
+        }
+      });
+
+      // 一意のタイトルをリスト化（重複除外）
+      const uniqueTitles = [...new Set(titleLinks)];
+      uniqueTitles.forEach(title => {
+        animeList.push({
+          id: Math.random().toString(36).slice(2),
+          title,
+          synopsis: '',
+          image_url: '',
+          copyright: '',
+          official_site: '',
+          season,
+          tags: [season].filter(Boolean),
+          pv_url: '',
+          total_episodes: 0,
+        });
+      });
     }
 
-    return NextResponse.json({ animeList });
-  } catch (error: any) {
-    return NextResponse.json({ error: '取得エラーが発生しました。' }, { status: 500 });
+    if (animeList.length === 0) {
+      return NextResponse.json({ error: '作品データを取得できませんでした' }, { status: 404 });
+    }
+
+    return NextResponse.json({ animeList, count: animeList.length });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || '予期しないエラーが発生しました' }, { status: 500 });
   }
 }
