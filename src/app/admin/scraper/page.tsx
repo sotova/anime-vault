@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { utils, writeFileXLSX } from 'xlsx';
 import Link from 'next/link';
+import { Anime } from '@/types/anime';
 
 export default function ScraperPage() {
   const [scrapeUrl, setScrapeUrl] = useState('');
@@ -24,14 +25,14 @@ export default function ScraperPage() {
       if (data.error) throw new Error(data.error);
 
       if (data.animeList?.length > 0) {
-        const excelData = data.animeList.map((a: Record<string, unknown>) => ({
+        const excelData = data.animeList.map((a: Anime) => ({
           'タイトル': a.title,
           '放送季': a.season,
           'あらすじ': a.synopsis,
           '画像URL': a.image_url,
           '公式サイト': a.official_site,
           'コピーライト': a.copyright,
-          'タグ': a.tags.join(', ')
+          'タグ': Array.isArray(a.tags) ? a.tags.join(', ') : ''
         }));
 
         const ws = utils.json_to_sheet(excelData);
