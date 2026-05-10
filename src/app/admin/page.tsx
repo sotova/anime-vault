@@ -186,7 +186,8 @@ function AdminContent() {
 
           {activeTab === 'edit' ? (
             <form onSubmit={handleSave}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 200px', gap: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 150px 200px', gap: '20px' }}>
+                {/* 基本情報 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <input style={inputStyle} value={form.title} required onChange={e => setForm({ ...form, title: e.target.value })} placeholder="タイトル *" />
                   <div style={{ display: 'flex', gap: '10px' }}>
@@ -195,17 +196,31 @@ function AdminContent() {
                   </div>
                   <input style={inputStyle} value={tagInput} onChange={e => { setTagInput(e.target.value); setForm({ ...form, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }); }} placeholder="タグ (カンマ区切り)" />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <input style={inputStyle} value={form.image_url} onChange={e => setForm({ ...form, image_url: e.target.value })} placeholder="画像 URL" />
-                  <input style={inputStyle} value={form.pv_url} onChange={e => setForm({ ...form, pv_url: e.target.value })} placeholder="PV URL (YouTube)" />
-                  <input style={inputStyle} value={form.official_site} onChange={e => setForm({ ...form, official_site: e.target.value })} placeholder="公式サイト URL" />
+
+                {/* あらすじ */}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <textarea style={{...inputStyle, height: '100%', minHeight: '120px', resize: 'none'}} value={form.synopsis} onChange={e => setForm({ ...form, synopsis: e.target.value })} placeholder="あらすじ..." />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', justifyContent: 'center' }}>
-                  <button type="submit" style={{ padding: '12px', background: '#d4a843', color: '#000', borderRadius: '10px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>
-                    {form.id ? '更新' : '登録'}
-                  </button>
-                  {form.id && <button type="button" onClick={() => { setForm(INITIAL_FORM); setTagInput(''); }} style={{ padding: '10px', background: 'transparent', color: '#666', border: '1px solid #333', borderRadius: '10px', cursor: 'pointer', fontSize: '12px' }}>キャンセル</button>}
-                  <label style={{ display: 'block', padding: '10px', textAlign: 'center', background: '#0a0a0a', border: '1px dashed #333', borderRadius: '10px', color: '#555', fontSize: '11px', cursor: 'pointer' }}>
+
+                {/* 画像プレビュー */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ width: '100%', height: '100px', background: '#050505', borderRadius: '8px', overflow: 'hidden', border: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {form.image_url ? <img src={form.image_url} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}} /> : <span style={{color:'#333', fontSize:'10px'}}>No Image</span>}
+                  </div>
+                  <input style={{...inputStyle, fontSize: '11px', padding: '8px'}} value={form.image_url} onChange={e => setForm({ ...form, image_url: e.target.value })} placeholder="画像 URL" />
+                </div>
+
+                {/* その他 & ボタン */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
+                  <input style={{...inputStyle, padding: '8px 12px', fontSize: '12px'}} value={form.pv_url} onChange={e => setForm({ ...form, pv_url: e.target.value })} placeholder="PV URL (YouTube)" />
+                  <input style={{...inputStyle, padding: '8px 12px', fontSize: '12px'}} value={form.official_site} onChange={e => setForm({ ...form, official_site: e.target.value })} placeholder="公式サイト URL" />
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                    <button type="submit" style={{ flex: 1, padding: '10px', background: '#d4a843', color: '#000', borderRadius: '10px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>
+                      {form.id ? '更新' : '保存'}
+                    </button>
+                    {form.id && <button type="button" onClick={() => { setForm(INITIAL_FORM); setTagInput(''); }} style={{ padding: '10px', background: 'transparent', color: '#666', border: '1px solid #333', borderRadius: '10px', cursor: 'pointer', fontSize: '12px' }}>×中止</button>}
+                  </div>
+                  <label style={{ display: 'block', padding: '6px', textAlign: 'center', background: '#0a0a0a', border: '1px dashed #333', borderRadius: '8px', color: '#555', fontSize: '10px', cursor: 'pointer' }}>
                     <input type="file" accept=".xlsx,.xls" onChange={handleFileUpload} style={{ display: 'none' }} />
                     📂 XLSX インポート
                   </label>

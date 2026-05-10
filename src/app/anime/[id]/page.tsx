@@ -35,18 +35,18 @@ export default function AnimeDetailPage() {
 
   const similar = useMemo(() => {
     if (!anime) return [];
-    const base = getBaseTitle(anime.title);
+    const base = getBaseTitle(anime);
     return animeList
-      .filter((a) => a.id !== anime.id && getBaseTitle(a.title) !== base && a.tags.some((t) => anime.tags.includes(t)))
+      .filter((a) => a.id !== anime.id && getBaseTitle(a) !== base && a.tags.some((t) => anime.tags.includes(t)))
       .slice(0, 6);
   }, [anime, animeList]);
 
   // 同じシリーズの別シーズンを取得
   const otherSeasons = useMemo(() => {
     if (!anime) return [];
-    const base = getBaseTitle(anime.title);
+    const base = getBaseTitle(anime);
     return animeList
-      .filter((a) => getBaseTitle(a.title) === base)
+      .filter((a) => getBaseTitle(a) === base)
       .sort((a, b) => (a.season || '').localeCompare(b.season || ''));
   }, [anime, animeList]);
 
