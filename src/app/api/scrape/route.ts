@@ -9,34 +9,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '現在はアニメイトタイムズのみ対応しています' }, { status: 400 });
     }
 
-    const response = await fetch(url);
+    // ブラウザになりすましてブロックを回避
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+    
     const html = await response.text();
     const $ = cheerio.load(html);
-
     const animeList: any[] = [];
 
-    // アニメイトタイムズの新しい構造に対応
+    // 最新の構造に対応
     $('section.c-tag-detail').each((_, el) => {
-      const title = $(el).find('h2.c-tag-detail__title').text().trim();
+      const title = $(el).find('.c-tag-detail__title').text().trim();
       if (!title) return;
 
       const image_url = $(el).find('.c-tag-detail__image img').attr('src') || '';
       const synopsis = $(el).find('.c-tag-detail__description').text().trim();
-      
-      // コピーライト (複数のクラスの可能性があるため柔軟に対応)
-      const copyright = $(el).find('.c-tag-detail__copyright, .c-tag-detail__copy').text().trim();
+      const copyright = $(el).find('.c-tag-detail__copy').text().trim();
+      const official_site = $(el).find('a:contains("公式サイト")').attr('href') || '';
 
-      // 公式サイトURL
-      const official_site = $(el).find('a[href*="official"]').attr('href') || 
-                            $(el).find('a:contains("公式サイト")').attr('href') || '';
-
-      // シーズン (ページタイトルから推測)
       const pageTitle = $('title').text();
       let season = '';
       const seasonMatch = pageTitle.match(/\d{4}年?\s*[春夏秋冬]/);
-      if (seasonMatch) {
-        season = seasonMatch[0].replace('年', ''); // 「2026 春」形式
-      }
+      if (seasonMatch) season = seasonMatch[0].replace('年', '');
 
       animeList.push({
         id: Math.random().toString(36).slice(2),
@@ -54,7 +51,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ animeList });
   } catch (error) {
-    console.error('Scrape error:', error);
     return NextResponse.json({ error: 'サイトの読み込みに失敗しました' }, { status: 500 });
   }
 }
