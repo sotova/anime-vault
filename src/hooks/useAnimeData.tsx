@@ -7,6 +7,7 @@ import { Anime, UserAnimeData, HybridAnime } from '@/types/anime';
 const LOCAL_DB_NAME = 'AnimeVaultDB';
 const STORE_NAME = 'anime_list';
 const USER_DATA_KEY = 'anime_vault_user_library';
+const SUPABASE_PAGE_SIZE = 1000;
 
 // Simple IndexedDB Wrapper
 async function getIDB(): Promise<IDBDatabase> {
@@ -79,13 +80,28 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
   const fetchCloud = useCallback(async () => {
     if (!isSupabaseConfigured || !supabase) return;
     try {
-      const { data, error } = await supabase.from('anime').select('*').order('created_at', { ascending: false });
-      if (error) throw error;
-      if (data) {
-        setAnimeList(data);
-        await saveToIDB(data);
-        setIsCloudSynced(true);
+      const allAnime: Anime[] = [];
+      let from = 0;
+
+      while (true) {
+        const to = from + SUPABASE_PAGE_SIZE - 1;
+        const { data, error } = await supabase
+          .from('anime')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+
+        allAnime.push(...data);
+        if (data.length < SUPABASE_PAGE_SIZE) break;
+        from += SUPABASE_PAGE_SIZE;
       }
+
+      setAnimeList(allAnime);
+      await saveToIDB(allAnime);
+      setIsCloudSynced(true);
     } catch (e) {
       console.error('Cloud sync failed:', e);
       setIsCloudSynced(false);
