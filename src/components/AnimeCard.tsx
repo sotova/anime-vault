@@ -4,6 +4,7 @@ import { HybridAnime } from '@/types/anime';
 import { StarRating } from './StarRating';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 interface AnimeCardProps {
   anime: HybridAnime;
@@ -65,10 +66,13 @@ export function AnimeCard({ anime, showProgress = false, index = 0 }: AnimeCardP
           {/* Image with Unified Cropping */}
           <div style={{ width: '100%', height: '100%', position: 'relative' }}>
             {anime.image_url ? (
-              <img 
-                src={anime.image_url} 
-                alt={anime.title} 
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              <Image
+                src={anime.image_url}
+                alt={anime.title}
+                fill
+                sizes="(max-width: 768px) 28vw, (max-width: 1200px) 20vw, 200px"
+                loading="lazy"
+                style={{ objectFit: 'cover' }}
               />
             ) : (
               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', color: '#444', fontSize: '12px' }}>
