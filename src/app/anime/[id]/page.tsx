@@ -8,6 +8,7 @@ import { AnimeStatus } from '@/types/anime';
 import { motion } from 'framer-motion';
 import { useMemo } from 'react';
 import { getBaseTitle } from '@/utils/animeUtils';
+import { Pencil } from 'lucide-react';
 
 function getYouTubeId(url: string) {
   if (!url) return null;
@@ -73,7 +74,7 @@ export default function AnimeDetailPage() {
               onClick={() => router.push(`/admin?editId=${anime.id}`)} 
               style={{ padding: '6px 12px', background: '#222', color: '#aaa', border: '1px solid #444', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}
             >
-              ✎ 編集
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Pencil size={14} />編集</span>
             </button>
           </div>
 

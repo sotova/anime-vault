@@ -1,13 +1,13 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { Anime, UserAnimeData, HybridAnime } from '@/types/anime';
 
 const LOCAL_DB_NAME = 'AnimeVaultDB';
 const STORE_NAME = 'anime_list';
 const USER_DATA_KEY = 'anime_vault_user_library';
-const SUPABASE_PAGE_SIZE = 1000;
+const SUPABASE_PAGE_SIZE = 100;
 
 // Simple IndexedDB Wrapper
 async function getIDB(): Promise<IDBDatabase> {
@@ -109,6 +109,7 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchCloud();
   }, [fetchCloud]);
 
@@ -119,7 +120,9 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
       await saveToIDB(newList);
 
       if (isSupabaseConfigured && supabase) {
-        const { error } = await supabase.from('anime').upsert([anime]);
+        const payload = { ...anime };
+        delete payload.created_at;
+        const { error } = await supabase.from('anime').upsert([payload], { onConflict: 'id' });
         if (error) throw error;
       }
       return true;
@@ -143,7 +146,12 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
         const chunkSize = 50;
         for (let i = 0; i < list.length; i += chunkSize) {
           const chunk = list.slice(i, i + chunkSize);
-          const { error } = await supabase.from('anime').upsert(chunk);
+          const chunkWithoutCreatedAt = chunk.map((item) => {
+            const payload = { ...item };
+            delete payload.created_at;
+            return payload;
+          });
+          const { error } = await supabase.from('anime').upsert(chunkWithoutCreatedAt, { onConflict: 'id' });
           if (error) throw error;
         }
       }

@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Home, Search, BookOpen, Settings } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { label: 'ホーム', href: '/' },
-  { label: 'アニメ一覧', href: '/anime' },
-  { label: 'ライブラリ', href: '/library' },
-  { label: '管理', href: '/admin' },
+  { label: 'ホーム', href: '/', icon: Home },
+  { label: 'アニメ一覧', href: '/anime', icon: Search },
+  { label: 'ライブラリ', href: '/library', icon: BookOpen },
+  { label: '管理', href: '/admin', icon: Settings },
 ];
 
 export function Sidebar() {
@@ -42,12 +43,16 @@ export function Sidebar() {
 
       {NAV_ITEMS.map((item) => {
         const isActive = pathname === item.href;
+        const Icon = item.icon;
         return (
           <Link
             key={item.href}
             href={item.href}
             style={{
-              display: 'block',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
               padding: '12px 8px',
               borderRadius: '6px',
               fontSize: '14px',
@@ -63,7 +68,8 @@ export function Sidebar() {
               textOverflow: 'ellipsis',
             }}
           >
-            {item.label}
+            <Icon size={16} strokeWidth={2} />
+            <span>{item.label}</span>
           </Link>
         );
       })}

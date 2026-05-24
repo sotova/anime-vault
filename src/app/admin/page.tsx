@@ -7,6 +7,7 @@ import { read, utils } from 'xlsx';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { getBaseTitle } from '@/utils/animeUtils';
+import { Globe, FileSpreadsheet, X } from 'lucide-react';
 
 const INITIAL_FORM: Omit<Anime, 'created_at'> = {
   id: '', title: '', tags: [], synopsis: '', image_url: '', pv_url: '',
@@ -55,7 +56,6 @@ function AdminContent() {
       if (target) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setActiveTab('edit');
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         startEdit(target);
       }
     }
@@ -154,7 +154,9 @@ function AdminContent() {
               border: '1px solid #d4a84366', borderRadius: '10px', textDecoration: 'none',
               fontSize: '12px', transition: 'all 0.2s'
             }}>
-              🌐 自動取得ツール
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <Globe size={14} />自動取得ツール
+              </span>
             </Link>
             <div style={{
               padding: '8px 12px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold',
@@ -218,11 +220,11 @@ function AdminContent() {
                     <button type="submit" style={{ flex: 1, padding: '10px', background: '#d4a843', color: '#000', borderRadius: '10px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>
                       {form.id ? '更新' : '保存'}
                     </button>
-                    {form.id && <button type="button" onClick={() => { setForm(INITIAL_FORM); setTagInput(''); }} style={{ padding: '10px', background: 'transparent', color: '#666', border: '1px solid #333', borderRadius: '10px', cursor: 'pointer', fontSize: '12px' }}>×中止</button>}
+                    {form.id && <button type="button" onClick={() => { setForm(INITIAL_FORM); setTagInput(''); }} style={{ padding: '10px', background: 'transparent', color: '#666', border: '1px solid #333', borderRadius: '10px', cursor: 'pointer', fontSize: '12px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><X size={14} />中止</span></button>}
                   </div>
                   <label style={{ display: 'block', padding: '6px', textAlign: 'center', background: '#0a0a0a', border: '1px dashed #333', borderRadius: '8px', color: '#555', fontSize: '10px', cursor: 'pointer' }}>
                     <input type="file" accept=".xlsx,.xls" onChange={handleFileUpload} style={{ display: 'none' }} />
-                    📂 XLSX インポート
+                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><FileSpreadsheet size={14} />XLSX インポート</span>
                   </label>
                 </div>
               </div>
