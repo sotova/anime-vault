@@ -10,11 +10,14 @@ import { Anime } from '@/types/anime';
 
 type SortKey = 'title' | 'season' | 'newest';
 
+const PAGE_SIZE = 100;
+
 function AnimeListContent() {
   const { animeList, loading } = useAnimeData();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortKey>('newest');
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // URLパラメータにseasonがあれば初期値としてセットする
   useEffect(() => {
@@ -69,6 +72,16 @@ function AnimeListContent() {
     return deduplicated;
   }, [animeList, search, sortBy]);
 
+
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setVisibleCount(PAGE_SIZE);
+  }, [search, sortBy, animeList.length]);
+
+  const visibleAnime = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const hasMore = visibleCount < filtered.length;
+
   if (loading) return <div style={{ padding: '60px', color: '#999', textAlign: 'center' }}>読み込み中...</div>;
 
   return (
@@ -99,9 +112,30 @@ function AnimeListContent() {
       </div>
 
       {filtered.length > 0 ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '16px' }}>
-          {filtered.map((a, i) => <AnimeCard key={a.id} anime={a} index={i} />)}
-        </div>
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '16px' }}>
+            {visibleAnime.map((a, i) => <AnimeCard key={a.id} anime={a} index={i} />)}
+          </div>
+          {hasMore && (
+            <div style={{ textAlign: 'center', marginTop: '24px' }}>
+              <button
+                type="button"
+                onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+                style={{
+                  padding: '12px 20px',
+                  background: '#111',
+                  color: '#d4a843',
+                  border: '1px solid #333',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                }}
+              >
+                さらに100件読み込む ({visibleAnime.length}/{filtered.length})
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <div style={{ padding: '80px', textAlign: 'center', color: '#666', background: '#111', borderRadius: '16px' }}>
           条件に合う作品が見つかりませんでした。

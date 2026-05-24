@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { getBaseTitle } from '@/utils/animeUtils';
 import { Anime } from '@/types/anime';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 // ユーザー様の形式「2026 春」に合わせて取得
 function getCurrentSeason() {
@@ -126,7 +127,7 @@ function CarouselSection({ title, children, href }: { title: string; children: R
     <div style={{ width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 5vw', marginBottom: '16px' }}>
         <h2 style={{ fontSize: 'clamp(18px, 4vw, 24px)', fontWeight: 'bold', color: '#fff', letterSpacing: '0.05em' }}>{title}</h2>
-        {href && <Link href={href} style={{ fontSize: '13px', color: '#d4a843', textDecoration: 'none', fontWeight: 'bold', opacity: 0.8 }}>すべて表示 →</Link>}
+        {href && <Link href={href} style={{ fontSize: '13px', color: '#d4a843', textDecoration: 'none', fontWeight: 'bold', opacity: 0.8 }}>すべて表示</Link>}
       </div>
 
       <div style={{ position: 'relative', width: '100%' }} onMouseEnter={checkScroll}>
@@ -141,7 +142,7 @@ function CarouselSection({ title, children, href }: { title: string; children: R
               onClick={() => scroll('left')}
               className="scroll-btn-hover"
               style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid #444', color: '#d4a843', cursor: 'pointer', fontSize: '24px', pointerEvents: 'auto' }}
-            >‹</button>
+            ><ChevronLeft size={24} /></button>
           </div>
         )}
         {canScroll.right && (
@@ -155,7 +156,7 @@ function CarouselSection({ title, children, href }: { title: string; children: R
               onClick={() => scroll('right')}
               className="scroll-btn-hover"
               style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid #444', color: '#d4a843', cursor: 'pointer', fontSize: '24px', pointerEvents: 'auto' }}
-            >›</button>
+            ><ChevronRight size={24} /></button>
           </div>
         )}
         <div ref={scrollRef} onScroll={checkScroll} className="no-scrollbar" style={{ display: 'flex', gap: '16px', overflowX: 'auto', padding: '10px 5vw 30px', scrollSnapType: 'x proximity', scrollBehavior: 'smooth', scrollPaddingLeft: '5vw' }}>

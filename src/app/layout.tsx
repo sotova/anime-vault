@@ -7,14 +7,15 @@ import { AnimeProvider } from "@/hooks/useAnimeData";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { Home, Search, BookOpen, Settings } from 'lucide-react';
 
 const inter = Inter({ subsets: ["latin"] });
 
 const NAV_ITEMS = [
-  { label: 'ホーム', href: '/', icon: '🏠' },
-  { label: '一覧', href: '/anime', icon: '🔍' },
-  { label: '書庫', href: '/library', icon: '📚' },
-  { label: '管理', href: '/admin', icon: '⚙️' },
+  { label: 'ホーム', href: '/', icon: Home },
+  { label: '一覧', href: '/anime', icon: Search },
+  { label: '書庫', href: '/library', icon: BookOpen },
+  { label: '管理', href: '/admin', icon: Settings },
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -65,13 +66,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               }}>
                 {NAV_ITEMS.map((item) => {
                   const isActive = pathname === item.href;
+                  const Icon = item.icon;
                   return (
                     <Link key={item.href} href={item.href} style={{ 
                       display: 'flex', flexDirection: 'column', alignItems: 'center',
                       textDecoration: 'none', color: isActive ? '#d4a843' : '#888',
                       flex: 1
                     }}>
-                      <span style={{ fontSize: '20px' }}>{item.icon}</span>
+                      <Icon size={20} strokeWidth={2} />
                       <span style={{ fontSize: '10px', marginTop: '4px', fontWeight: isActive ? 'bold' : 'normal' }}>{item.label}</span>
                     </Link>
                   );

@@ -11,7 +11,7 @@ export function getBaseTitle(anime: Anime | string): string {
   if (!title) return '';
 
   // サブタイトルや期数を除去するためのより強力な正規表現
-  let base = title
+  const base = title
     .replace(/[（(].*?[)）]$/, '') // 末尾のカッコを除去
     .replace(/\s*(?:第?\d+[期回巻章]|シーズン\s*\d+|Season\s*\d+|Part\s*\d+|後編|前編|完結編|総集編|劇場版|Final|SPECIAL|OAD|OVA|TVアニメ).*$/gi, '')
     .replace(/\s+\d+$/, '') // 末尾の数字
@@ -30,4 +30,3 @@ export function getBaseTitle(anime: Anime | string): string {
 
   return base;
 }
-
