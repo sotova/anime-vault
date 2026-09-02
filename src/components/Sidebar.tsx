@@ -2,77 +2,25 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, BookOpen, Settings } from 'lucide-react';
+import { Home, Search, BookOpen, Settings, Sparkles } from 'lucide-react';
 
 const NAV_ITEMS = [
   { label: 'ホーム', href: '/', icon: Home },
-  { label: 'アニメ一覧', href: '/anime', icon: Search },
+  { label: '探す', href: '/anime', icon: Search },
   { label: 'ライブラリ', href: '/library', icon: BookOpen },
   { label: '管理', href: '/admin', icon: Settings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-
-  return (
-    <aside style={{
-      width: '160px',
-      minHeight: '100vh',
-      background: '#111',
-      borderRight: '1px solid #333',
-      padding: '24px 12px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '8px',
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      zIndex: 50,
-    }}>
-      <div style={{
-        fontFamily: 'Georgia, serif',
-        fontStyle: 'italic',
-        fontSize: '22px',
-        color: '#d4a843',
-        marginBottom: '32px',
-        lineHeight: '1.2',
-        textAlign: 'center',
-      }}>
-        Anime<br />Manager
-      </div>
-
-      {NAV_ITEMS.map((item) => {
-        const isActive = pathname === item.href;
-        const Icon = item.icon;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '12px 8px',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              color: isActive ? '#000' : '#d4a843',
-              background: isActive ? '#888' : 'transparent',
-              textDecoration: 'none',
-              transition: 'all 0.2s',
-              textAlign: 'center',
-              letterSpacing: '1px',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            <Icon size={16} strokeWidth={2} />
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
-    </aside>
-  );
+  return <aside style={{ width: 244, minHeight: '100vh', padding: '28px 16px', background: 'rgba(255,251,255,.86)', borderRight: '1px solid rgba(121,116,126,.18)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <Link href="/" style={{ textDecoration: 'none', color: '#1d1b20', padding: '12px 14px 32px', display: 'block' }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6750a4', fontSize: 13, fontWeight: 800, letterSpacing: '.08em' }}><Sparkles size={16} /> YOUR COLLECTION</span>
+      <strong style={{ display: 'block', fontFamily: "Georgia, Times New Roman, serif", fontSize: 29, letterSpacing: '-.06em', marginTop: 8 }}>Anime<br />Vault</strong>
+    </Link>
+    <nav aria-label="メインナビゲーション" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {NAV_ITEMS.map(({ label, href, icon: Icon }) => { const active = pathname === href; return <Link key={href} href={href} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 16px', borderRadius: 999, color: active ? '#21005d' : '#49454f', background: active ? '#e9ddff' : 'transparent', fontWeight: active ? 800 : 600, textDecoration: 'none', transition: 'background .2s' }}><Icon size={19} strokeWidth={active ? 2.6 : 2} />{label}</Link>; })}
+    </nav>
+    <div style={{ marginTop: 'auto', color: '#79747e', fontSize: 12, padding: 14, lineHeight: 1.5 }}>見たい物語を、<br />自分だけの棚へ。</div>
+  </aside>;
 }
