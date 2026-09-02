@@ -52,10 +52,10 @@ export default function LibraryPage() {
   if (loading) return <div style={{ padding: '60px', color: '#999' }}>読み込み中...</div>;
 
   return (
-    <div style={{ padding: '40px 48px' }}>
+    <div className="m3-page">
       <motion.h1
         initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '48px', color: '#d4a843', textAlign: 'center', marginBottom: '24px' }}
+        style={{ fontFamily: "Georgia, Times New Roman, serif", fontSize: 'clamp(34px, 6vw, 54px)', color: '#1d1b20', textAlign: 'left', letterSpacing: '-.04em', marginBottom: '24px' }}
       >
         My Library
       </motion.h1>
@@ -65,9 +65,9 @@ export default function LibraryPage() {
         {TABS.map((tab) => (
           <button key={tab.value} onClick={() => setActiveTab(tab.value)}
             style={{
-              padding: '8px 20px', borderRadius: '6px', border: '1px solid #555', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer',
-              background: activeTab === tab.value ? '#666' : 'transparent',
-              color: activeTab === tab.value ? '#fff' : '#aaa', transition: 'all 0.2s',
+              padding: '8px 20px', borderRadius: '6px', border: '1px solid #79747e', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer',
+              background: activeTab === tab.value ? '#e9ddff' : 'transparent',
+              color: activeTab === tab.value ? '#21005d' : '#49454f', transition: 'all 0.2s',
             }}
           >{tab.label}</button>
         ))}
@@ -79,21 +79,21 @@ export default function LibraryPage() {
           placeholder="ライブラリ内を検索..."
           value={search} onChange={(e) => setSearch(e.target.value)}
           style={{
-            flex: 1, minWidth: '200px', padding: '10px 14px', background: '#111', border: '1px solid #333',
-            borderRadius: '8px', color: '#fff', fontSize: '13px', outline: 'none',
+            flex: 1, minWidth: '200px', padding: '10px 14px', background: '#f3edf7', border: '1px solid #79747e',
+            borderRadius: '16px', color: '#1d1b20', fontSize: '13px', outline: 'none',
           }}
         />
         <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortKey)}
-          style={{ padding: '10px 14px', background: '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '13px' }}
+          style={{ padding: '10px 14px', background: '#f3edf7', border: '1px solid #79747e', borderRadius: '16px', color: '#1d1b20', fontSize: '13px' }}
         >
           <option value="title">名前順</option>
           <option value="rating">評価順</option>
           <option value="season">年代順</option>
         </select>
         <button onClick={exportUserData}
-          style={{ padding: '10px 16px', background: '#333', border: '1px solid #555', borderRadius: '8px', color: '#ccc', fontSize: '12px', cursor: 'pointer' }}
+          style={{ padding: '10px 16px', background: '#e9ddff', border: '1px solid #e9ddff', borderRadius: '999px', color: '#21005d', fontSize: '12px', cursor: 'pointer' }}
         >EXPORT</button>
-        <label style={{ padding: '10px 16px', background: '#333', border: '1px solid #555', borderRadius: '8px', color: '#ccc', fontSize: '12px', cursor: 'pointer' }}>
+        <label style={{ padding: '10px 16px', background: '#e9ddff', border: '1px solid #e9ddff', borderRadius: '999px', color: '#21005d', fontSize: '12px', cursor: 'pointer' }}>
           IMPORT
           <input type="file" accept=".json" style={{ display: 'none' }}
             onChange={(e) => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onload = (ev) => importUserData(ev.target?.result as string); r.readAsText(f); } }}
@@ -103,11 +103,11 @@ export default function LibraryPage() {
 
       {/* Grid */}
       {filtered.length > 0 ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))', gap: '20px' }}>
           {filtered.map((a, i) => <AnimeCard key={a.id} anime={a} showProgress index={i} />)}
         </div>
       ) : (
-        <div style={{ padding: '60px', textAlign: 'center', color: '#666', background: '#1a1a1a', borderRadius: '12px' }}>
+        <div style={{ padding: '60px', textAlign: 'center', color: '#666', background: '#f3edf7', border: '1px solid #e7e0ec', borderRadius: '24px' }}>
           {search ? '検索結果がありません。' : activeTab === 'すべて' ? 'ライブラリは空です。作品詳細から「ライブラリに追加」してください。' : `「${activeTab}」の作品はまだありません。`}
         </div>
       )}

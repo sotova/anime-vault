@@ -1,5 +1,4 @@
 'use client';
-
 import { useAnimeData } from '@/hooks/useAnimeData';
 import { AnimeCard } from '@/components/AnimeCard';
 import { motion } from 'framer-motion';
@@ -7,170 +6,21 @@ import Link from 'next/link';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { getBaseTitle } from '@/utils/animeUtils';
 import { Anime } from '@/types/anime';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-
-// ユーザー様の形式「2026 春」に合わせて取得
-function getCurrentSeason() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  let season = '';
-  if (month >= 1 && month <= 3) season = '冬';
-  else if (month >= 4 && month <= 6) season = '春';
-  else if (month >= 7 && month <= 9) season = '夏';
-  else season = '秋';
-  return `${year} ${season}`; // 「年」を抜いた形式
-}
-
+import { ChevronLeft, ChevronRight, ArrowUpRight, Play } from 'lucide-react';
+function getCurrentSeason() { const now = new Date(); const season = now.getMonth() < 3 ? '冬' : now.getMonth() < 6 ? '春' : now.getMonth() < 9 ? '夏' : '秋'; return `${now.getFullYear()} ${season}`; }
 export default function HomePage() {
-  const { animeList, loading } = useAnimeData();
-  const currentSeasonLabel = useMemo(() => getCurrentSeason(), []);
-  const [recommended, setRecommended] = useState<typeof animeList>([]);
-
-  useEffect(() => {
-    // ランダムに並び替えてからシリーズで重複排除
-    const shuffled = animeList.slice().sort(() => 0.5 - Math.random());
-    const grouped = shuffled.reduce((acc, a) => {
-      const base = getBaseTitle(a);
-      if (!acc[base]) acc[base] = [];
-      acc[base].push(a);
-      return acc;
-    }, {} as Record<string, Anime[]>);
-    
-    const uniqueRecommended = Object.values(grouped)
-      .map(group => group.sort((a, b) => (a.season || '').localeCompare(b.season || ''))[0])
-      .slice(0, 15);
-      
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setRecommended(uniqueRecommended);
-  }, [animeList]);
-
-  if (loading) return <div style={{ padding: '60px', color: '#999', textAlign: 'center' }}>読み込み中...</div>;
-
-  const watching = animeList.filter((a) => a.userData?.status === '視聴中');
-  const seasonal = animeList.filter((a) => a.season === currentSeasonLabel);
-  // 「見たい」作品を抽出
-  const planToWatch = animeList.filter((a) => a.userData?.status === '見たい');
-
-  return (
-    <div style={{ padding: '60px 0', width: '100%', overflowX: 'hidden' }}>
-      <motion.h1
-        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-        style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 'clamp(32px, 8vw, 56px)', color: '#d4a843', textAlign: 'center', marginBottom: '60px', textShadow: '0 4px 20px rgba(212,168,67,0.2)' }}
-      >
-        Anime Vault
-      </motion.h1>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '50px' }}>
-        {watching.length > 0 && (
-          <CarouselSection title="視聴中の作品" href="/library">
-            {watching.map((a, i) => <CardFrame key={a.id}><AnimeCard anime={a} showProgress index={i} /></CardFrame>)}
-          </CarouselSection>
-        )}
-
-        <CarouselSection 
-          title={`今季アニメ (${currentSeasonLabel})`} 
-          href={`/anime?season=${encodeURIComponent(currentSeasonLabel)}`}
-        >
-          {seasonal.length > 0 ? (
-            seasonal.map((a, i) => <CardFrame key={a.id}><AnimeCard anime={a} index={i} /></CardFrame>)
-          ) : <div style={{ padding: '40px', color: '#444', textAlign: 'center', width: '100%' }}>{currentSeasonLabel} の作品はまだ登録されていません</div>}
-        </CarouselSection>
-
-        {/* 変更: 見たい作品 */}
-        <CarouselSection title="見たい作品 (ライブラリ)" href="/library">
-          {planToWatch.length > 0 ? (
-            planToWatch.map((a, i) => <CardFrame key={a.id}><AnimeCard anime={a} index={i} /></CardFrame>)
-          ) : <div style={{ padding: '40px', color: '#444', textAlign: 'center', width: '100%' }}>ライブラリに「見たい」作品がありません</div>}
-        </CarouselSection>
-
-        <CarouselSection title="おすすめの作品" href="/anime">
-          {recommended.length > 0 ? (
-            recommended.map((a, i) => <CardFrame key={a.id}><AnimeCard anime={a} index={i} /></CardFrame>)
-          ) : <div style={{ padding: '40px', color: '#444', textAlign: 'center', width: '100%' }}>作品がありません</div>}
-        </CarouselSection>
-      </div>
-    </div>
-  );
+ const { animeList, loading } = useAnimeData(); const currentSeasonLabel = useMemo(() => getCurrentSeason(), []); const recommended = useMemo(() => { const grouped = animeList.reduce((acc, anime) => { const base = getBaseTitle(anime); (acc[base] ||= []).push(anime); return acc; }, {} as Record<string, Anime[]>); return Object.values(grouped).map(group => group.sort((a,b) => (a.season || '').localeCompare(b.season || ''))[0]).slice(0,15); }, [animeList]);
+ if (loading) return <div className="m3-page" style={{ textAlign: 'center', color: '#49454f' }}>あなたの棚を準備しています…</div>;
+ const watching = animeList.filter(a => a.userData?.status === '視聴中'); const seasonal = animeList.filter(a => a.season === currentSeasonLabel); const planToWatch = animeList.filter(a => a.userData?.status === '見たい');
+ return <div className="m3-page" style={{ maxWidth: 'none', paddingLeft: 0, paddingRight: 0 }}>
+   <section style={{ padding: '18px clamp(20px,4vw,64px) 40px', display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: 24, alignItems: 'end' }}>
+     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}><div className="m3-eyebrow">ANIME VAULT · PERSONAL SPACE</div><h1 className="m3-title" style={{ fontSize: 'clamp(45px,7vw,82px)', lineHeight: .95 }}>今日の気分に、<br /><em style={{ color: '#6750a4' }}>物語を。</em></h1><p className="m3-subtitle" style={{ maxWidth: 510 }}>観たい作品、続きが気になる作品、心に残った作品。あなたのアニメ時間をひとつの場所に。</p></motion.div>
+     <div className="m3-surface" style={{ minWidth: 180, padding: '18px 20px', background: '#e9ddff' }}><div style={{ color: '#49454f', fontSize: 12, fontWeight: 700 }}>COLLECTION</div><strong style={{ display: 'block', fontSize: 30, color: '#21005d', marginTop: 5 }}>{animeList.length}</strong><span style={{ color: '#49454f', fontSize: 12 }}>タイトルを保存中</span></div>
+   </section>
+   {watching.length > 0 && <section style={{ margin: '0 clamp(20px,4vw,64px) 42px', padding: 24, background: '#d9e2ff', borderRadius: 30 }}><div style={{ display:'flex', justifyContent:'space-between', gap:16, alignItems:'center', marginBottom: 18 }}><div><div className="m3-eyebrow" style={{ color:'#006a6a' }}>KEEP WATCHING</div><h2 className="m3-title" style={{ fontSize: 27, margin: '3px 0' }}>つづきを観る</h2></div><Link className="m3-button" href="/library" style={{ textDecoration:'none', whiteSpace:'nowrap' }}><Play size={15} style={{ verticalAlign:'-3px', marginRight:5 }} />ライブラリ</Link></div><div style={{ display:'flex', gap:16, overflowX:'auto', paddingBottom:4 }} className="no-scrollbar">{watching.slice(0,6).map((a,i) => <div key={a.id} style={{ width:'clamp(140px,18vw,190px)', flexShrink:0 }}><AnimeCard anime={a} showProgress index={i}/></div>)}</div></section>}
+   <div style={{ display:'flex', flexDirection:'column', gap: 42 }}><CarouselSection title={`今季の注目 · ${currentSeasonLabel}`} href={`/anime?season=${encodeURIComponent(currentSeasonLabel)}`}>{seasonal.length ? seasonal.map((a,i)=><CardFrame key={a.id}><AnimeCard anime={a} index={i}/></CardFrame>) : <Empty text={`${currentSeasonLabel} の作品はまだありません`} />}</CarouselSection><CarouselSection title="観たいリスト" subtitle="次に出会う、心が動く一本。" href="/library">{planToWatch.length ? planToWatch.map((a,i)=><CardFrame key={a.id}><AnimeCard anime={a} index={i}/></CardFrame>) : <Empty text="「見たい」作品をライブラリに追加しましょう" />}</CarouselSection><CarouselSection title="あなたへのおすすめ" subtitle="コレクションから選んだ、新しい物語。" href="/anime">{recommended.length ? recommended.map((a,i)=><CardFrame key={a.id}><AnimeCard anime={a} index={i}/></CardFrame>) : <Empty text="作品がありません" />}</CarouselSection></div>
+ </div>;
 }
-
-function CarouselSection({ title, children, href }: { title: string; children: React.ReactNode; href?: string }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScroll, setCanScroll] = useState({ left: false, right: true });
-
-  const checkScroll = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setCanScroll({
-        left: scrollLeft > 10,
-        right: scrollLeft < scrollWidth - clientWidth - 10
-      });
-    }
-  };
-
-  useEffect(() => {
-    checkScroll();
-    const handleResize = () => checkScroll();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [children]);
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollRef.current) {
-      const { clientWidth } = scrollRef.current;
-      const amount = clientWidth * 0.8;
-      scrollRef.current.scrollBy({ left: direction === 'left' ? -amount : amount, behavior: 'smooth' });
-    }
-  };
-
-  return (
-    <div style={{ width: '100%' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 5vw', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: 'clamp(18px, 4vw, 24px)', fontWeight: 'bold', color: '#fff', letterSpacing: '0.05em' }}>{title}</h2>
-        {href && <Link href={href} style={{ fontSize: '13px', color: '#d4a843', textDecoration: 'none', fontWeight: 'bold', opacity: 0.8 }}>すべて表示</Link>}
-      </div>
-
-      <div style={{ position: 'relative', width: '100%' }} onMouseEnter={checkScroll}>
-        {canScroll.left && (
-          <div style={{ 
-            position: 'absolute', left: 0, top: 0, bottom: 0, width: '100px', 
-            background: 'linear-gradient(to right, rgba(10,10,10,1) 0%, transparent 100%)', 
-            zIndex: 10, display: 'flex', alignItems: 'center', paddingLeft: '20px',
-            pointerEvents: 'none'
-          }}>
-            <button 
-              onClick={() => scroll('left')}
-              className="scroll-btn-hover"
-              style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid #444', color: '#d4a843', cursor: 'pointer', fontSize: '24px', pointerEvents: 'auto' }}
-            ><ChevronLeft size={24} /></button>
-          </div>
-        )}
-        {canScroll.right && (
-          <div style={{ 
-            position: 'absolute', right: 0, top: 0, bottom: 0, width: '100px', 
-            background: 'linear-gradient(to left, rgba(10,10,10,1) 0%, transparent 100%)', 
-            zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: '20px',
-            pointerEvents: 'none'
-          }}>
-            <button 
-              onClick={() => scroll('right')}
-              className="scroll-btn-hover"
-              style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid #444', color: '#d4a843', cursor: 'pointer', fontSize: '24px', pointerEvents: 'auto' }}
-            ><ChevronRight size={24} /></button>
-          </div>
-        )}
-        <div ref={scrollRef} onScroll={checkScroll} className="no-scrollbar" style={{ display: 'flex', gap: '16px', overflowX: 'auto', padding: '10px 5vw 30px', scrollSnapType: 'x proximity', scrollBehavior: 'smooth', scrollPaddingLeft: '5vw' }}>
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CardFrame({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ width: 'clamp(110px, 28vw, 200px)', flexShrink: 0, scrollSnapAlign: 'start' }}>
-      {children}
-    </div>
-  );
-}
+function Empty({text}:{text:string}) { return <div className="m3-surface" style={{ padding:32, color:'#49454f', width:'100%', textAlign:'center' }}>{text}</div>; }
+function CarouselSection({ title, subtitle, children, href }: {title:string; subtitle?:string; children:React.ReactNode; href:string}) { const ref=useRef<HTMLDivElement>(null); const [can,setCan]=useState({left:false,right:true}); const check=()=>{ if(ref.current) { const {scrollLeft,scrollWidth,clientWidth}=ref.current; setCan({left:scrollLeft>10,right:scrollLeft<scrollWidth-clientWidth-10}); }}; useEffect(()=>{check(); window.addEventListener('resize',check); return()=>window.removeEventListener('resize',check);},[children]); const scroll=(direction:'left'|'right')=>ref.current?.scrollBy({left:(direction==='left'?-1:1)*(ref.current.clientWidth*.8),behavior:'smooth'}); return <section><div style={{ padding:'0 clamp(20px,4vw,64px)', display:'flex', justifyContent:'space-between', alignItems:'end', gap:16, marginBottom:14 }}><div><h2 className="m3-title" style={{ fontSize:'clamp(24px,3vw,32px)', margin:0 }}>{title}</h2>{subtitle&&<p className="m3-subtitle" style={{fontSize:14}}>{subtitle}</p>}</div><Link href={href} style={{ color:'#6750a4', fontWeight:800, textDecoration:'none', whiteSpace:'nowrap', fontSize:14 }}>すべて見る <ArrowUpRight size={15} style={{verticalAlign:'-3px'}}/></Link></div><div style={{position:'relative'}}>{can.left&&<button aria-label="前へ" onClick={()=>scroll('left')} className="scroll-btn-hover" style={{position:'absolute',zIndex:2,left:18,top:'42%',border:0,borderRadius:99,width:42,height:42,background:'#fffbff',color:'#6750a4',cursor:'pointer',boxShadow:'0 3px 10px #0002'}}><ChevronLeft/></button>}{can.right&&<button aria-label="次へ" onClick={()=>scroll('right')} className="scroll-btn-hover" style={{position:'absolute',zIndex:2,right:18,top:'42%',border:0,borderRadius:99,width:42,height:42,background:'#fffbff',color:'#6750a4',cursor:'pointer',boxShadow:'0 3px 10px #0002'}}><ChevronRight/></button>}<div ref={ref} onScroll={check} className="no-scrollbar" style={{display:'flex',gap:16,overflowX:'auto',padding:'4px clamp(20px,4vw,64px) 18px'}}>{children}</div></div></section>; }
+function CardFrame({children}:{children:React.ReactNode}) { return <div style={{ width:'clamp(140px,17vw,210px)', flexShrink:0 }}>{children}</div>; }
