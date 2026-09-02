@@ -28,7 +28,7 @@ function getVal(row: Record<string, unknown>, candidates: string[]): string {
 }
 
 function AdminContent() {
-  const { animeList, upsertAnime, bulkUpsert, deleteAnime, isCloudSynced } = useAnimeData();
+  const { animeList, upsertAnime, bulkUpsert, deleteAnime, isCloudSynced, cloudSyncError, refresh } = useAnimeData();
   const [form, setForm] = useState(INITIAL_FORM);
   const [tagInput, setTagInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -122,13 +122,13 @@ function AdminContent() {
   };
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '13px 16px', background: '#0a0a0a',
-    border: '1px solid #2a2a2a', borderRadius: '12px', color: '#fff',
+    width: '100%', padding: '13px 16px', background: '#fffbff',
+    border: '1px solid #2a2a2a', borderRadius: '12px', color: '#1d1b20',
     fontSize: '14px', outline: 'none', boxSizing: 'border-box',
     transition: 'border-color 0.2s',
   };
   const labelStyle: React.CSSProperties = {
-    display: 'block', fontSize: '12px', color: '#666',
+    display: 'block', fontSize: '12px', color: '#49454f',
     fontWeight: '600', marginBottom: '8px', letterSpacing: '0.05em',
   };
 
@@ -141,17 +141,17 @@ function AdminContent() {
           <div>
             <h1 style={{
               fontFamily: 'Georgia, "游明朝", serif', fontStyle: 'italic',
-              fontSize: 'clamp(24px, 4vw, 36px)', color: '#d4a843',
+              fontSize: 'clamp(24px, 4vw, 36px)', color: '#6750a4',
               textShadow: '0 4px 20px rgba(212,168,67,0.2)', margin: 0
             }}>
               Management
             </h1>
-            <p style={{ color: '#555', fontSize: '12px', marginTop: '4px' }}>データベース管理 · 一括操作</p>
+            <p style={{ color: '#49454f', fontSize: '12px', marginTop: '4px' }}>データベース管理 · 一括操作</p>
           </div>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <Link href="/admin/scraper" style={{
-              padding: '8px 16px', background: 'transparent', color: '#d4a843',
-              border: '1px solid #d4a84366', borderRadius: '10px', textDecoration: 'none',
+              padding: '8px 16px', background: 'transparent', color: '#6750a4',
+              border: '1px solid #6750a466', borderRadius: '10px', textDecoration: 'none',
               fontSize: '12px', transition: 'all 0.2s'
             }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
@@ -169,20 +169,27 @@ function AdminContent() {
           </div>
         </header>
 
+        {cloudSyncError && (
+          <div role="alert" style={{ marginBottom: '20px', padding: '14px 16px', background: '#fce8e6', border: '1px solid #b3261e', borderRadius: '16px', color: '#5f2120', fontSize: '13px', lineHeight: 1.55, display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'center' }}>
+            <span><strong>クラウド同期が停止しています。</strong> {cloudSyncError} ローカル保存済みのデータはこの端末で引き続き利用できます。</span>
+            <button type="button" onClick={() => refresh()} style={{ flexShrink: 0, padding: '8px 12px', border: '1px solid #6750a4', borderRadius: '999px', color: '#6750a4', background: 'transparent', fontWeight: 'bold', cursor: 'pointer' }}>再接続</button>
+          </div>
+        )}
+
         {/* フォーム / シリーズ結合エリア */}
         <div style={{
-          background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '24px',
-          padding: '24px', marginBottom: '24px', boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
+          background: '#fffbff', border: '1px solid #cac4d0', borderRadius: '24px',
+          padding: '24px', marginBottom: '24px', boxShadow: '0 4px 12px rgba(49,45,65,0.08)',
         }}>
           {/* タブ切り替え */}
-          <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', borderBottom: '1px solid #222', paddingBottom: '10px' }}>
+          <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', borderBottom: '1px solid #cac4d0', paddingBottom: '10px' }}>
             <button onClick={() => setActiveTab('edit')} style={{
-              background: 'transparent', border: 'none', color: activeTab === 'edit' ? '#d4a843' : '#666',
-              fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', borderBottom: activeTab === 'edit' ? '2px solid #d4a843' : 'none', paddingBottom: '8px'
+              background: 'transparent', border: 'none', color: activeTab === 'edit' ? '#6750a4' : '#49454f',
+              fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', borderBottom: activeTab === 'edit' ? '2px solid #6750a4' : 'none', paddingBottom: '8px'
             }}>新規登録 / 編集</button>
             <button onClick={() => setActiveTab('merge')} style={{
-              background: 'transparent', border: 'none', color: activeTab === 'merge' ? '#d4a843' : '#666',
-              fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', borderBottom: activeTab === 'merge' ? '2px solid #d4a843' : 'none', paddingBottom: '8px'
+              background: 'transparent', border: 'none', color: activeTab === 'merge' ? '#6750a4' : '#49454f',
+              fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', borderBottom: activeTab === 'merge' ? '2px solid #6750a4' : 'none', paddingBottom: '8px'
             }}>シリーズ結合</button>
           </div>
 
@@ -206,8 +213,8 @@ function AdminContent() {
 
                 {/* 画像プレビュー */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ width: '100%', height: '100px', background: '#050505', borderRadius: '8px', overflow: 'hidden', border: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {form.image_url ? <img src={form.image_url} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}} /> : <span style={{color:'#333', fontSize:'10px'}}>No Image</span>}
+                  <div style={{ width: '100%', height: '100px', background: '#f3edf7', borderRadius: '8px', overflow: 'hidden', border: '1px solid #cac4d0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {form.image_url ? <img src={form.image_url} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}} /> : <span style={{color:'#79747e', fontSize:'10px'}}>No Image</span>}
                   </div>
                   <input style={{...inputStyle, fontSize: '11px', padding: '8px'}} value={form.image_url} onChange={e => setForm({ ...form, image_url: e.target.value })} placeholder="画像 URL" />
                 </div>
@@ -217,12 +224,12 @@ function AdminContent() {
                   <input style={{...inputStyle, padding: '8px 12px', fontSize: '12px'}} value={form.pv_url} onChange={e => setForm({ ...form, pv_url: e.target.value })} placeholder="PV URL (YouTube)" />
                   <input style={{...inputStyle, padding: '8px 12px', fontSize: '12px'}} value={form.official_site} onChange={e => setForm({ ...form, official_site: e.target.value })} placeholder="公式サイト URL" />
                   <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                    <button type="submit" style={{ flex: 1, padding: '10px', background: '#d4a843', color: '#000', borderRadius: '10px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>
+                    <button type="submit" style={{ flex: 1, padding: '10px', background: '#6750a4', color: '#fff', borderRadius: '10px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>
                       {form.id ? '更新' : '保存'}
                     </button>
-                    {form.id && <button type="button" onClick={() => { setForm(INITIAL_FORM); setTagInput(''); }} style={{ padding: '10px', background: 'transparent', color: '#666', border: '1px solid #333', borderRadius: '10px', cursor: 'pointer', fontSize: '12px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><X size={14} />中止</span></button>}
+                    {form.id && <button type="button" onClick={() => { setForm(INITIAL_FORM); setTagInput(''); }} style={{ padding: '10px', background: 'transparent', color: '#49454f', border: '1px solid #79747e', borderRadius: '10px', cursor: 'pointer', fontSize: '12px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><X size={14} />中止</span></button>}
                   </div>
-                  <label style={{ display: 'block', padding: '6px', textAlign: 'center', background: '#0a0a0a', border: '1px dashed #333', borderRadius: '8px', color: '#555', fontSize: '10px', cursor: 'pointer' }}>
+                  <label style={{ display: 'block', padding: '6px', textAlign: 'center', background: '#fffbff', border: '1px dashed #79747e', borderRadius: '8px', color: '#49454f', fontSize: '10px', cursor: 'pointer' }}>
                     <input type="file" accept=".xlsx,.xls" onChange={handleFileUpload} style={{ display: 'none' }} />
                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><FileSpreadsheet size={14} />XLSX インポート</span>
                   </label>
@@ -242,7 +249,7 @@ function AdminContent() {
               <div>
                 <label style={labelStyle}>結合する作品を選択 (複数可)</label>
                 <input style={{...inputStyle, marginBottom: '8px', fontSize: '12px', padding: '8px'}} placeholder="結合先を検索..." value={targetSearch} onChange={e => setTargetSearch(e.target.value)} />
-                <div style={{ maxHeight: '100px', overflowY: 'auto', background: '#050505', border: '1px solid #222', borderRadius: '8px', padding: '8px' }}>
+                <div style={{ maxHeight: '100px', overflowY: 'auto', background: '#f3edf7', border: '1px solid #cac4d0', borderRadius: '8px', padding: '8px' }}>
                   {animeList.filter(a => a.id !== baseAnimeId && a.title.toLowerCase().includes(targetSearch.toLowerCase())).map(a => (
                     <label key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0', fontSize: '12px', cursor: 'pointer' }}>
                       <input type="checkbox" checked={targetAnimeIds.includes(a.id)} onChange={e => { if (e.target.checked) setTargetAnimeIds([...targetAnimeIds, a.id]); else setTargetAnimeIds(targetAnimeIds.filter(id => id !== a.id)); }} />
@@ -275,7 +282,7 @@ function AdminContent() {
                     setTargetAnimeIds([]);
                   }}
                   disabled={!baseAnimeId || targetAnimeIds.length === 0}
-                  style={{ width: '100%', padding: '12px', background: (!baseAnimeId || targetAnimeIds.length === 0) ? '#333' : '#d4a843', color: '#000', borderRadius: '10px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
+                  style={{ width: '100%', padding: '12px', background: (!baseAnimeId || targetAnimeIds.length === 0) ? '#79747e' : '#6750a4', color: '#fff', borderRadius: '10px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
                 >
                   結合を実行
                 </button>
@@ -285,9 +292,9 @@ function AdminContent() {
         </div>
 
         {/* フィルター / 検索バー */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', background: '#0a0a0a', padding: '12px 20px', borderRadius: '16px', border: '1px solid #1a1a1a' }}>
-          <h2 style={{ fontSize: '14px', color: '#d4a843', margin: 0 }}>
-            作品リスト <span style={{ color: '#444', fontSize: '12px', fontWeight: 'normal' }}>({filteredList.length} / {animeList.length})</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', background: '#fffbff', padding: '12px 20px', borderRadius: '16px', border: '1px solid #1a1a1a' }}>
+          <h2 style={{ fontSize: '14px', color: '#6750a4', margin: 0 }}>
+            作品リスト <span style={{ color: '#49454f', fontSize: '12px', fontWeight: 'normal' }}>({filteredList.length} / {animeList.length})</span>
           </h2>
           <div style={{ display: 'flex', gap: '10px' }}>
             <input style={{ ...inputStyle, padding: '8px 12px', width: '180px', fontSize: '13px' }} placeholder="タイトル検索..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
@@ -312,24 +319,24 @@ function AdminContent() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '40px' }}>
           {filteredList.map(a => (
             <div key={a.id} style={{
-              background: '#0d0d0d', padding: '14px 24px', border: '1px solid #1e1e1e',
+              background: '#fffbff', padding: '14px 24px', border: '1px solid #cac4d0',
               borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '20px',
               transition: 'all 0.2s',
             }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = '#d4a84333')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e1e1e')}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = '#6750a433')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = '#cac4d0')}
             >
-              <div style={{ width: '38px', height: '52px', borderRadius: '6px', background: '#111', overflow: 'hidden', flexShrink: 0 }}>
+              <div style={{ width: '38px', height: '52px', borderRadius: '6px', background: '#f7f2fa', overflow: 'hidden', flexShrink: 0 }}>
                 {a.image_url && <img src={a.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
               </div>
               <div style={{ flex: 1, overflow: 'hidden' }}>
                 <div style={{ fontWeight: '600', fontSize: '14px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{a.title}</div>
-                <div style={{ fontSize: '12px', color: '#555', marginTop: '3px' }}>
+                <div style={{ fontSize: '12px', color: '#49454f', marginTop: '3px' }}>
                   {[a.season, a.total_episodes ? `${a.total_episodes}話` : null].filter(Boolean).join(' · ')}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                <button onClick={() => startEdit(a)} style={{ padding: '7px 16px', background: '#1a1a1a', color: '#ccc', border: '1px solid #2a2a2a', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>編集</button>
+                <button onClick={() => startEdit(a)} style={{ padding: '7px 16px', background: '#f3edf7', color: '#1d1b20', border: '1px solid #2a2a2a', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>編集</button>
                 <button onClick={() => deleteAnime(a.id)} style={{ padding: '7px 16px', background: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>削除</button>
               </div>
             </div>
@@ -342,7 +349,7 @@ function AdminContent() {
 
 export default function AdminPage() {
   return (
-    <Suspense fallback={<div style={{ padding: '60px', color: '#999', textAlign: 'center' }}>Loading...</div>}>
+    <Suspense fallback={<div style={{ padding: '60px', color: '#49454f', textAlign: 'center' }}>Loading...</div>}>
       <AdminContent />
     </Suspense>
   );

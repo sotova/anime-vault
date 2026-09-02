@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured, supabaseConfigurationError } from '@/lib/supabase';
 import { Anime, UserAnimeData, HybridAnime } from '@/types/anime';
 
 const LOCAL_DB_NAME = 'AnimeVaultDB';
@@ -46,6 +46,7 @@ interface AnimeContextType {
   rawAnimeList: Anime[];
   loading: boolean;
   isCloudSynced: boolean;
+  cloudSyncError: string | null;
   upsertAnime: (anime: Anime) => Promise<boolean>;
   bulkUpsert: (list: Anime[]) => Promise<boolean>;
   deleteAnime: (id: string) => Promise<void>;
@@ -63,6 +64,7 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
   const [userData, setUserData] = useState<Record<string, UserAnimeData>>({});
   const [loading, setLoading] = useState(true);
   const [isCloudSynced, setIsCloudSynced] = useState(false);
+  const [cloudSyncError, setCloudSyncError] = useState<string | null>(supabaseConfigurationError);
 
   // 初回ロード
   useEffect(() => {
@@ -78,7 +80,11 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fetchCloud = useCallback(async () => {
-    if (!isSupabaseConfigured || !supabase) return;
+    if (!isSupabaseConfigured || !supabase) {
+      setIsCloudSynced(false);
+      setCloudSyncError(supabaseConfigurationError);
+      return;
+    }
     try {
       const allAnime: Anime[] = [];
       let from = 0;
@@ -102,9 +108,11 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
       setAnimeList(allAnime);
       await saveToIDB(allAnime);
       setIsCloudSynced(true);
+      setCloudSyncError(null);
     } catch (e) {
       console.error('Cloud sync failed:', e);
       setIsCloudSynced(false);
+      setCloudSyncError('クラウドに接続できません。Supabase の Project URL が有効か、プロジェクトが停止していないかを確認してください。');
     }
   }, []);
 
@@ -128,8 +136,9 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
       return true;
     } catch (e) {
       console.error('Save failed:', e);
-      alert('保存に失敗しました。容量制限か通信エラーの可能性があります。');
-      return false;
+      setIsCloudSynced(false);
+      setCloudSyncError('この端末には保存しましたが、クラウドへの保存に失敗しました。Supabase の接続設定を確認してください。');
+      return true;
     }
   };
 
@@ -158,8 +167,9 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
       return true;
     } catch (e) {
       console.error('Bulk save failed:', e);
-      alert('一括保存に失敗しました。');
-      return false;
+      setIsCloudSynced(false);
+      setCloudSyncError('この端末には保存しましたが、クラウドへの一括保存に失敗しました。Supabase の接続設定を確認してください。');
+      return true;
     }
   };
 
@@ -214,6 +224,7 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
       rawAnimeList: animeList,
       loading,
       isCloudSynced,
+      cloudSyncError,
       upsertAnime,
       bulkUpsert,
       deleteAnime,

@@ -85,10 +85,10 @@ function AnimeListContent() {
   if (loading) return <div style={{ padding: '60px', color: '#999', textAlign: 'center' }}>読み込み中...</div>;
 
   return (
-    <div style={{ padding: '40px 5vw' }}>
+    <div className="m3-page">
       <motion.h1
         initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 'clamp(24px, 6vw, 42px)', color: '#d4a843', textAlign: 'center', marginBottom: '32px' }}
+        style={{ fontFamily: "Georgia, Times New Roman, serif", fontSize: 'clamp(34px, 6vw, 54px)', color: '#1d1b20', textAlign: 'left', letterSpacing: '-.04em', marginBottom: '24px' }}
       >
         Explore Anime
       </motion.h1>
@@ -98,12 +98,12 @@ function AnimeListContent() {
           placeholder="タイトル・タグ・年代で検索..."
           value={search} onChange={(e) => setSearch(e.target.value)}
           style={{
-            flex: 1, minWidth: '200px', padding: '12px 18px', background: '#111', border: '1px solid #333',
-            borderRadius: '10px', color: '#fff', fontSize: '15px', outline: 'none',
+            flex: 1, minWidth: '200px', padding: '12px 18px', background: '#f3edf7', border: '1px solid #79747e',
+            borderRadius: '16px', color: '#1d1b20', fontSize: '15px', outline: 'none',
           }}
         />
         <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortKey)}
-          style={{ padding: '12px 18px', background: '#111', border: '1px solid #333', borderRadius: '10px', color: '#fff', fontSize: '14px' }}
+          style={{ padding: '12px 18px', background: '#f3edf7', border: '1px solid #79747e', borderRadius: '16px', color: '#1d1b20', fontSize: '14px' }}
         >
           <option value="newest">新着順</option>
           <option value="title">名前順</option>
@@ -113,7 +113,7 @@ function AnimeListContent() {
 
       {filtered.length > 0 ? (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))', gap: '20px' }}>
             {visibleAnime.map((a, i) => <AnimeCard key={a.id} anime={a} index={i} />)}
           </div>
           {hasMore && (
@@ -123,10 +123,10 @@ function AnimeListContent() {
                 onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
                 style={{
                   padding: '12px 20px',
-                  background: '#111',
-                  color: '#d4a843',
-                  border: '1px solid #333',
-                  borderRadius: '10px',
+                  background: '#6750a4',
+                  color: '#fff',
+                  border: '1px solid #6750a4',
+                  borderRadius: '999px',
                   cursor: 'pointer',
                   fontWeight: 'bold',
                 }}
