@@ -74,6 +74,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=あなたのキー
 3. `NEXT_PUBLIC_SUPABASE_URL` と `NEXT_PUBLIC_SUPABASE_ANON_KEY` を追加する
 4. **追加後、一度 Git Push して再ビルドを行ってください。**
 
+> **`ERR_NAME_NOT_RESOLVED` / Local Only の場合**: Vercel に登録された `NEXT_PUBLIC_SUPABASE_URL` が存在しない Supabase プロジェクトを指しています。Supabase の **Project Settings → API** に表示される Project URL と anon public key をコピーし直し、Vercel の Preview と Production の両方に設定して再デプロイしてください。プロジェクトが停止・削除されている場合は、再開または新しいプロジェクトを作成し、上の SQL を実行します。管理画面には原因と再接続ボタンが表示されます。
+
 ### ステップ 8: 起動
 ```bash
 npm run dev

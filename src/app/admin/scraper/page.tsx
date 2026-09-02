@@ -16,10 +16,10 @@ export default function ScraperPage() {
     setError(null);
 
     try {
-      const res = await fetch('/api/scrape', { 
-        method: 'POST', 
+      const res = await fetch('/api/scrape', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: scrapeUrl }) 
+        body: JSON.stringify({ url: scrapeUrl })
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -50,22 +50,22 @@ export default function ScraperPage() {
   };
 
   return (
-    <div style={{ padding: '60px 20px', maxWidth: '800px', margin: '0 auto', color: '#fff' }}>
+    <div style={{ padding: '60px 20px', maxWidth: '800px', margin: '0 auto', color: '#1d1b20' }}>
       <div style={{ marginBottom: '40px' }}>
-        <Link href="/admin" style={{ color: '#d4a843', textDecoration: 'none', fontSize: '14px' }}>← 管理画面に戻る</Link>
-        <h1 style={{ color: '#fff', fontSize: '32px', marginTop: '20px' }}>🌐 自動取得ツール</h1>
-        <p style={{ color: '#888', marginTop: '10px' }}>アニメイトタイムズのURLから全作品を抽出し、エクセル(XLSX)を生成します。</p>
+        <Link href="/admin" style={{ color: '#6750a4', textDecoration: 'none', fontSize: '14px' }}>← 管理画面に戻る</Link>
+        <h1 style={{ color: '#1d1b20', fontSize: '32px', marginTop: '20px' }}>🌐 自動取得ツール</h1>
+        <p style={{ color: '#49454f', marginTop: '10px' }}>アニメイトタイムズのURLから全作品を抽出し、エクセル(XLSX)を生成します。</p>
       </div>
 
-      <div style={{ background: '#111', padding: '40px', borderRadius: '24px', border: '1px solid #222', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
+      <div style={{ background: '#fffbff', padding: '40px', borderRadius: '24px', border: '1px solid #cac4d0' }}>
         <div style={{ marginBottom: '25px' }}>
-          <label style={{ display: 'block', color: '#888', fontSize: '13px', marginBottom: '10px' }}>対象のまとめURL</label>
+          <label style={{ display: 'block', color: '#49454f', fontSize: '13px', marginBottom: '10px' }}>対象のまとめURL</label>
           <input
             className="input"
             placeholder="https://www.animatetimes.com/tag/details.php?id=..."
             value={scrapeUrl}
             onChange={(e) => setScrapeUrl(e.target.value)}
-            style={{ width: '100%', padding: '16px', background: '#000', border: '1px solid #222', borderRadius: '12px', color: '#fff', outline: 'none' }}
+            style={{ width: '100%', padding: '16px', background: '#f3edf7', border: '1px solid #79747e', borderRadius: '12px', color: '#1d1b20', outline: 'none' }}
           />
         </div>
 
@@ -75,16 +75,16 @@ export default function ScraperPage() {
           onClick={handleScrapeToExcel}
           disabled={isProcessing || !scrapeUrl}
           style={{
-            width: '100%', padding: '18px', background: isProcessing ? '#333' : '#d4a843', 
-            color: '#000', borderRadius: '12px', border: 'none', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer'
+            width: '100%', padding: '18px', background: isProcessing ? '#79747e' : '#6750a4',
+            color: '#fff', borderRadius: '12px', border: 'none', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer'
           }}
         >
           {isProcessing ? 'サイトを解析中...' : '解析してエクセルをダウンロード'}
         </button>
 
         <div style={{ marginTop: '30px', padding: '20px', background: 'rgba(212, 168, 67, 0.05)', borderRadius: '12px', border: '1px solid rgba(212, 168, 67, 0.2)' }}>
-          <h3 style={{ fontSize: '14px', color: '#d4a843', marginBottom: '10px' }}>💡 使い方</h3>
-          <ul style={{ fontSize: '13px', color: '#aaa', paddingLeft: '20px', lineHeight: '1.6' }}>
+          <h3 style={{ fontSize: '14px', color: '#6750a4', marginBottom: '10px' }}>💡 使い方</h3>
+          <ul style={{ fontSize: '13px', color: '#49454f', paddingLeft: '20px', lineHeight: '1.6' }}>
             <li>解析が終わると自動で XLSX ファイルがダウンロードされます。</li>
             <li>ダウンロードしたファイルを Excel 等で開き、内容を確認・修正してください。</li>
             <li>管理画面の「インポート」からそのファイルを読み込めば一括登録完了です。</li>
