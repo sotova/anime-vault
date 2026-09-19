@@ -1,25 +1,45 @@
 'use client';
 
-import { useState, useMemo, useEffect, Suspense } from 'react';
+import { useState, useMemo, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAnimeData } from '@/hooks/useAnimeData';
 import { AnimeCard } from '@/components/AnimeCard';
 import { motion } from 'framer-motion';
-import { getBaseTitle } from '@/utils/animeUtils';
+import { compareSeasons, getBaseTitle } from '@/utils/animeUtils';
 import { Anime } from '@/types/anime';
 
 type SortKey = 'title' | 'season' | 'newest';
 
 const PAGE_SIZE = 100;
+const stateKey = 'anime-vault-anime-list-state';
+
+function getSavedListState() {
+  if (typeof window === 'undefined') return {};
+  try {
+    return JSON.parse(sessionStorage.getItem(stateKey) || '{}') as { search?: string; sortBy?: SortKey; visibleCount?: number; scrollY?: number };
+  } catch {
+    return {};
+  }
+}
 
 function AnimeListContent() {
   const { animeList, loading } = useAnimeData();
   const searchParams = useSearchParams();
-  const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState<SortKey>('newest');
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [search, setSearch] = useState(() => getSavedListState().search || '');
+  const [sortBy, setSortBy] = useState<SortKey>(() => getSavedListState().sortBy || 'newest');
+  const [visibleCount, setVisibleCount] = useState(() => getSavedListState().visibleCount || PAGE_SIZE);
+  const restoredState = useRef(true);
 
   // URLパラメータにseasonがあれば初期値としてセットする
+  useEffect(() => {
+    const { scrollY } = getSavedListState();
+    requestAnimationFrame(() => window.scrollTo(0, scrollY || 0));
+  }, []);
+
+  const saveListState = () => {
+    sessionStorage.setItem(stateKey, JSON.stringify({ search, sortBy, visibleCount, scrollY: window.scrollY }));
+  };
+
   useEffect(() => {
     const seasonQuery = searchParams.get('season');
     if (seasonQuery) {
@@ -42,7 +62,7 @@ function AnimeListContent() {
 
     list.sort((a, b) => {
       if (sortBy === 'title') return a.title.localeCompare(b.title, 'ja');
-      if (sortBy === 'season') return (b.season || '').localeCompare(a.season || '');
+      if (sortBy === 'season') return compareSeasons(a.season, b.season, false);
       if (sortBy === 'newest') return (b.created_at || '').localeCompare(a.created_at || '');
       return 0;
     });
@@ -58,13 +78,13 @@ function AnimeListContent() {
     // 各グループの中で最も古いシーズン（一番最初のシーズン）を代表として表示、新着順などのソート順は維持する
     const deduplicated = Object.values(grouped).map(group => {
       // 内部的には放送季の古い順（Season 1など）を代表にする
-      return group.sort((a, b) => (a.season || '').localeCompare(b.season || ''))[0];
+      return group.sort((a, b) => compareSeasons(a.season, b.season))[0];
     });
 
     // 再度外側のソートを適用する（代表作品だけで）
     deduplicated.sort((a, b) => {
       if (sortBy === 'title') return a.title.localeCompare(b.title, 'ja');
-      if (sortBy === 'season') return (b.season || '').localeCompare(a.season || '');
+      if (sortBy === 'season') return compareSeasons(a.season, b.season, false);
       if (sortBy === 'newest') return (b.created_at || '').localeCompare(a.created_at || '');
       return 0;
     });
@@ -75,7 +95,10 @@ function AnimeListContent() {
 
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (restoredState.current) {
+      restoredState.current = false;
+      return;
+    }
     setVisibleCount(PAGE_SIZE);
   }, [search, sortBy, animeList.length]);
 
@@ -114,7 +137,7 @@ function AnimeListContent() {
       {filtered.length > 0 ? (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))', gap: '20px' }}>
-            {visibleAnime.map((a, i) => <AnimeCard key={a.id} anime={a} index={i} />)}
+            {visibleAnime.map((a, i) => <AnimeCard key={a.id} anime={a} index={i} onNavigate={saveListState} />)}
           </div>
           {hasMore && (
             <div style={{ textAlign: 'center', marginTop: '24px' }}>

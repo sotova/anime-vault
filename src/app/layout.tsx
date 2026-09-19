@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Home, Search, BookOpen, Settings } from 'lucide-react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const NAV_ITEMS = [
   { label: 'ホーム', href: '/', icon: Home },
@@ -27,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   }, []);
 
   return (
-    <html lang="ja">
+    <html lang="ja" suppressHydrationWarning>
       <head>
         <title>Anime Vault</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               marginLeft: isMobile ? 0 : '244px',
               width: isMobile ? '100%' : 'calc(100% - 244px)'
             }}>
+              {isMobile && <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 250 }}><ThemeToggle /></div>}
               {children}
             </main>
 

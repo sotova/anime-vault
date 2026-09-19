@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Search, BookOpen, Settings, Sparkles } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 const NAV_ITEMS = [
   { label: 'ホーム', href: '/', icon: Home },
@@ -21,6 +22,6 @@ export function Sidebar() {
     <nav aria-label="メインナビゲーション" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {NAV_ITEMS.map(({ label, href, icon: Icon }) => { const active = pathname === href; return <Link key={href} href={href} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 16px', borderRadius: 999, color: active ? '#21005d' : '#49454f', background: active ? '#e9ddff' : 'transparent', fontWeight: active ? 800 : 600, textDecoration: 'none', transition: 'background .2s' }}><Icon size={19} strokeWidth={active ? 2.6 : 2} />{label}</Link>; })}
     </nav>
-    <div style={{ marginTop: 'auto', color: '#79747e', fontSize: 12, padding: 14, lineHeight: 1.5 }}>見たい物語を、<br />自分だけの棚へ。</div>
+    <div style={{ marginTop: 'auto' }}><ThemeToggle /><div style={{ color: 'var(--on-surface-variant)', fontSize: 12, padding: 14, lineHeight: 1.5 }}>見たい物語を、<br />自分だけの棚へ。</div></div>
   </aside>;
 }

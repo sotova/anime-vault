@@ -8,7 +8,7 @@ import { StarRating } from '@/components/StarRating';
 import { AnimeStatus } from '@/types/anime';
 import { motion } from 'framer-motion';
 import { useMemo } from 'react';
-import { getBaseTitle } from '@/utils/animeUtils';
+import { compareSeasons, getBaseTitle } from '@/utils/animeUtils';
 import { Pencil } from 'lucide-react';
 
 function getYouTubeId(url: string) {
@@ -49,7 +49,7 @@ export default function AnimeDetailPage() {
     const base = getBaseTitle(anime);
     return animeList
       .filter((a) => getBaseTitle(a) === base)
-      .sort((a, b) => (a.season || '').localeCompare(b.season || ''));
+      .sort((a, b) => compareSeasons(a.season, b.season));
   }, [anime, animeList]);
 
   if (!anime) {
@@ -65,6 +65,7 @@ export default function AnimeDetailPage() {
 
   return (
     <div className="m3-page">
+      <button type="button" onClick={() => router.back()} style={{ marginBottom: '24px', padding: '9px 14px', background: 'var(--surface-container)', color: 'var(--on-surface)', border: '1px solid var(--outline)', borderRadius: '999px', cursor: 'pointer', fontWeight: 'bold' }}>← 一覧に戻る</button>
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(320px, .9fr)', gap: '48px', marginBottom: '48px' }}>
         {/* Left: Info */}
         <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>

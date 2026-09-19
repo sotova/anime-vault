@@ -9,6 +9,22 @@ const STORE_NAME = 'anime_list';
 const USER_DATA_KEY = 'anime_vault_user_library';
 const SUPABASE_PAGE_SIZE = 100;
 
+function normalizeAnime(anime: Anime): Anime {
+  return {
+    id: String(anime.id || '').trim(),
+    title: String(anime.title || '').trim(),
+    tags: Array.isArray(anime.tags) ? anime.tags.map(String).map(tag => tag.trim()).filter(Boolean) : [],
+    synopsis: String(anime.synopsis || ''),
+    pv_url: String(anime.pv_url || ''),
+    image_url: String(anime.image_url || ''),
+    season: String(anime.season || '').trim(),
+    total_episodes: Number.isFinite(Number(anime.total_episodes)) ? Number(anime.total_episodes) : 0,
+    official_site: String(anime.official_site || ''),
+    copyright: String(anime.copyright || ''),
+    ...(anime.created_at ? { created_at: anime.created_at } : {}),
+  };
+}
+
 // Simple IndexedDB Wrapper
 async function getIDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -122,30 +138,40 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
   }, [fetchCloud]);
 
   const upsertAnime = async (anime: Anime): Promise<boolean> => {
+    const previousList = animeList;
     try {
-      const newList = [anime, ...animeList.filter(a => a.id !== anime.id)];
+      const normalized = normalizeAnime(anime);
+      if (!normalized.id || !normalized.title) throw new Error('作品IDまたはタイトルがありません。');
+      const newList = [normalized, ...animeList.filter(a => a.id !== normalized.id)];
       setAnimeList(newList);
       await saveToIDB(newList);
 
       if (isSupabaseConfigured && supabase) {
-        const payload = { ...anime };
+        const payload = { ...normalized };
         delete payload.created_at;
         const { error } = await supabase.from('anime').upsert([payload], { onConflict: 'id' });
         if (error) throw error;
+        setIsCloudSynced(true);
+        setCloudSyncError(null);
       }
       return true;
     } catch (e) {
       console.error('Save failed:', e);
+      setAnimeList(previousList);
+      await saveToIDB(previousList);
       setIsCloudSynced(false);
-      setCloudSyncError('この端末には保存しましたが、クラウドへの保存に失敗しました。Supabase の接続設定を確認してください。');
-      return true;
+      setCloudSyncError(e instanceof Error ? `クラウドへの保存に失敗しました: ${e.message}` : 'クラウドへの保存に失敗しました。');
+      return false;
     }
   };
 
   const bulkUpsert = async (list: Anime[]): Promise<boolean> => {
+    const previousList = animeList;
     try {
+      const normalizedList = list.map(normalizeAnime);
+      if (normalizedList.some(anime => !anime.id || !anime.title)) throw new Error('IDまたはタイトルがない作品が含まれています。');
       const map = new Map(animeList.map(a => [a.id, a]));
-      list.forEach(a => map.set(a.id, a));
+      normalizedList.forEach(a => map.set(a.id, a));
       const newList = Array.from(map.values());
       setAnimeList(newList);
       await saveToIDB(newList);
@@ -153,8 +179,8 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
       if (isSupabaseConfigured && supabase) {
         // 分割して送信（念のため）
         const chunkSize = 50;
-        for (let i = 0; i < list.length; i += chunkSize) {
-          const chunk = list.slice(i, i + chunkSize);
+        for (let i = 0; i < normalizedList.length; i += chunkSize) {
+          const chunk = normalizedList.slice(i, i + chunkSize);
           const chunkWithoutCreatedAt = chunk.map((item) => {
             const payload = { ...item };
             delete payload.created_at;
@@ -163,13 +189,17 @@ export function AnimeProvider({ children }: { children: React.ReactNode }) {
           const { error } = await supabase.from('anime').upsert(chunkWithoutCreatedAt, { onConflict: 'id' });
           if (error) throw error;
         }
+        setIsCloudSynced(true);
+        setCloudSyncError(null);
       }
       return true;
     } catch (e) {
       console.error('Bulk save failed:', e);
+      setAnimeList(previousList);
+      await saveToIDB(previousList);
       setIsCloudSynced(false);
-      setCloudSyncError('この端末には保存しましたが、クラウドへの一括保存に失敗しました。Supabase の接続設定を確認してください。');
-      return true;
+      setCloudSyncError(e instanceof Error ? `クラウドへの一括保存に失敗しました: ${e.message}` : 'クラウドへの一括保存に失敗しました。');
+      return false;
     }
   };
 

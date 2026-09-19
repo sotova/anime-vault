@@ -6,7 +6,7 @@ import { Anime } from '@/types/anime';
 import { read, utils } from 'xlsx';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { getBaseTitle } from '@/utils/animeUtils';
+import { compareSeasons, getBaseTitle } from '@/utils/animeUtils';
 import { Globe, FileSpreadsheet, X } from 'lucide-react';
 import { RemoteImage } from '@/components/RemoteImage';
 
@@ -33,6 +33,7 @@ function AdminContent() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [tagInput, setTagInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [yearFilter, setYearFilter] = useState('');
   const [seasonFilter, setSeasonFilter] = useState('');
   const [emptyFilter, setEmptyFilter] = useState('');
   
@@ -62,10 +63,12 @@ function AdminContent() {
     }
   }, [editId, animeList]);
 
-  const uniqueSeasons = Array.from(new Set(animeList.map(a => a.season))).filter(Boolean).sort().reverse();
+  const uniqueYears = Array.from(new Set(animeList.map(a => a.season.match(/\d{4}/)?.[0]).filter(Boolean))).sort((a, b) => Number(b) - Number(a));
+  const uniqueSeasons = ['冬', '春', '夏', '秋'];
 
   const filteredList = animeList.filter(a => {
-    if (seasonFilter && a.season !== seasonFilter) return false;
+    if (yearFilter && !a.season.includes(yearFilter)) return false;
+    if (seasonFilter && !a.season.includes(seasonFilter)) return false;
     if (searchQuery && !a.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (emptyFilter) {
       if (emptyFilter === 'tags' && a.tags.length > 0) return false;
@@ -75,13 +78,17 @@ function AdminContent() {
       if (emptyFilter === 'official_site' && a.official_site) return false;
     }
     return true;
-  });
+  }).sort((a, b) => compareSeasons(a.season, b.season, false));
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title) return;
     const finalData = { ...form, id: form.id || Math.random().toString(36).slice(2) };
-    await upsertAnime(finalData);
+    const saved = await upsertAnime(finalData);
+    if (!saved) {
+      alert('クラウドへ保存できませんでした。エラー表示を確認してください。');
+      return;
+    }
     setForm(INITIAL_FORM);
     setTagInput('');
     alert('保存しました');
@@ -113,8 +120,8 @@ function AdminContent() {
       })).filter(a => a.title);
 
       if (newList.length > 0) {
-        await bulkUpsert(newList);
-        alert(`${newList.length}件をインポートしました！`);
+        const saved = await bulkUpsert(newList);
+        alert(saved ? `${newList.length}件をインポートしました！` : 'インポートデータをクラウドへ保存できませんでした。エラー表示を確認してください。');
       } else {
         alert('タイトルのある作品が見つかりませんでした。列名を確認してください。');
       }
@@ -299,7 +306,11 @@ function AdminContent() {
           </h2>
           <div style={{ display: 'flex', gap: '10px' }}>
             <input style={{ ...inputStyle, padding: '8px 12px', width: '180px', fontSize: '13px' }} placeholder="タイトル検索..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-            <select style={{ ...inputStyle, padding: '8px 12px', width: '130px', fontSize: '13px' }} value={seasonFilter} onChange={e => setSeasonFilter(e.target.value)}>
+            <select style={{ ...inputStyle, padding: '8px 12px', width: '110px', fontSize: '13px' }} value={yearFilter} onChange={e => setYearFilter(e.target.value)}>
+              <option value="">全放送年</option>
+              {uniqueYears.map(year => <option key={year} value={year}>{year}年</option>)}
+            </select>
+            <select style={{ ...inputStyle, padding: '8px 12px', width: '110px', fontSize: '13px' }} value={seasonFilter} onChange={e => setSeasonFilter(e.target.value)}>
               <option value="">全放送季</option>
               {uniqueSeasons.map(s => <option key={s} value={s}>{s}</option>)}
             </select>

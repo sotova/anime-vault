@@ -5,6 +5,7 @@ import { useAnimeData } from '@/hooks/useAnimeData';
 import { AnimeCard } from '@/components/AnimeCard';
 import { AnimeStatus } from '@/types/anime';
 import { motion } from 'framer-motion';
+import { compareSeasons } from '@/utils/animeUtils';
 
 const TABS: { label: string; value: AnimeStatus | 'すべて' }[] = [
   { label: 'すべて', value: 'すべて' },
@@ -43,7 +44,7 @@ export default function LibraryPage() {
     list = [...list].sort((a, b) => {
       if (sortBy === 'title') return a.title.localeCompare(b.title, 'ja');
       if (sortBy === 'rating') return (b.userData?.rating || 0) - (a.userData?.rating || 0);
-      if (sortBy === 'season') return (b.season || '').localeCompare(a.season || '');
+      if (sortBy === 'season') return compareSeasons(a.season, b.season, false);
       return 0;
     });
     return list;

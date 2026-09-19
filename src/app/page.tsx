@@ -4,12 +4,12 @@ import { AnimeCard } from '@/components/AnimeCard';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRef, useState, useEffect, useMemo } from 'react';
-import { getBaseTitle } from '@/utils/animeUtils';
+import { compareSeasons, getBaseTitle } from '@/utils/animeUtils';
 import { Anime } from '@/types/anime';
 import { ChevronLeft, ChevronRight, ArrowUpRight, Play } from 'lucide-react';
 function getCurrentSeason() { const now = new Date(); const season = now.getMonth() < 3 ? '冬' : now.getMonth() < 6 ? '春' : now.getMonth() < 9 ? '夏' : '秋'; return `${now.getFullYear()} ${season}`; }
 export default function HomePage() {
- const { animeList, loading } = useAnimeData(); const currentSeasonLabel = useMemo(() => getCurrentSeason(), []); const recommended = useMemo(() => { const grouped = animeList.reduce((acc, anime) => { const base = getBaseTitle(anime); (acc[base] ||= []).push(anime); return acc; }, {} as Record<string, Anime[]>); return Object.values(grouped).map(group => group.sort((a,b) => (a.season || '').localeCompare(b.season || ''))[0]).slice(0,15); }, [animeList]);
+ const { animeList, loading } = useAnimeData(); const currentSeasonLabel = useMemo(() => getCurrentSeason(), []); const recommended = useMemo(() => { const grouped = animeList.reduce((acc, anime) => { const base = getBaseTitle(anime); (acc[base] ||= []).push(anime); return acc; }, {} as Record<string, Anime[]>); return Object.values(grouped).map(group => group.sort((a,b) => compareSeasons(a.season, b.season))[0]).slice(0,15); }, [animeList]);
  if (loading) return <div className="m3-page" style={{ textAlign: 'center', color: '#49454f' }}>あなたの棚を準備しています…</div>;
  const watching = animeList.filter(a => a.userData?.status === '視聴中'); const seasonal = animeList.filter(a => a.season === currentSeasonLabel); const planToWatch = animeList.filter(a => a.userData?.status === '見たい');
  return <div className="m3-page" style={{ maxWidth: 'none', paddingLeft: 0, paddingRight: 0 }}>
