@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,7 +7,7 @@
 :root[data-theme='dark'] { --primary: #ffd166; --accent-text: #ffe09a; --on-primary: #3b2800; --primary-container: #765313; --on-primary-container: #ffe8a8; --secondary-container: #3b3526; --surface: #17130d; --surface-container: #282117; --surface-container-high: #342a1b; --surface-variant: #403522; --on-surface: #f8edda; --on-surface-variant: #d3c3a5; --outline: #b9a781; --tertiary: #8bd4c4; --shadow: 0 16px 42px rgba(0, 0, 0, .36); }
 * { box-sizing: border-box; }
 html { background: var(--surface); }
-body { color: var(--on-surface); background: radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--primary-container) 55%, transparent) 0, transparent 31rem), radial-gradient(circle at 0 28%, color-mix(in srgb, var(--secondary-container) 65%, transparent) 0, transparent 26rem), var(--surface); overflow-x: hidden; margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+body { color: var(--on-surface); background: radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--primary-container) 55%, transparent) 0, transparent 31rem), radial-gradient(circle at 0 28%, color-mix(in srgb, var(--secondary-container) 65%, transparent) 0, transparent 26rem), var(--surface); overflow-x: hidden; margin: 0; font-family: 'Zen Maru Gothic', system-ui, sans-serif; }
 button, input, select { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
@@ -23,7 +24,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 [style*="#21005d"] { color: var(--accent-text) !important; }
 [style*="#1d1b20"], [style*="#49454f"], [style*="rgb(29, 27, 32)"], [style*="rgb(73, 69, 79)"] { color: var(--on-surface) !important; }
 [style*="background-color: #6750a4"], [style*="background-color:#6750a4"], [style*="background-color: rgb(103, 80, 164)"], [style*="background-color:rgb(103, 80, 164)"] { background-color: var(--primary) !important; }
-[style*="Georgia"], [style*="游明朝"] { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif !important; letter-spacing: 0 !important; }
+[style*="Georgia"], [style*="游明朝"] { font-family: 'Zen Maru Gothic', system-ui, sans-serif !important; letter-spacing: .01em !important; }
 input, textarea, select { color: var(--on-surface); }
 input::placeholder, textarea::placeholder { color: var(--on-surface-variant); opacity: 1; }
 option { color: var(--on-surface); background: var(--surface-container); }
@@ -32,7 +33,7 @@ option { color: var(--on-surface); background: var(--surface-container); }
 .app-main { flex: 1; min-height: 100vh; padding-bottom: 32px; }
 .m3-page { max-width: 1500px; margin: 0 auto; padding: 38px clamp(20px, 4vw, 64px); }
 .m3-eyebrow { color: var(--primary); font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-.m3-title { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--on-surface); letter-spacing: 0; margin: 8px 0; }
+.m3-title { font-family: 'Zen Maru Gothic', system-ui, sans-serif; color: var(--on-surface); letter-spacing: .01em; font-weight: 900; margin: 8px 0; }
 .m3-subtitle { color: var(--on-surface-variant); margin: 0; line-height: 1.6; }
 .m3-surface { background: rgba(255,251,255,.78); border: 1px solid rgba(121,116,126,.18); border-radius: 28px; box-shadow: var(--shadow); backdrop-filter: blur(12px); }
 .m3-input { background: var(--surface-container); color: var(--on-surface); border: 1px solid var(--outline); border-radius: 16px; padding: 13px 16px; outline: none; }
@@ -42,6 +43,10 @@ option { color: var(--on-surface); background: var(--surface-container); }
 .m3-button { border: 0; border-radius: 999px; padding: 12px 20px; background: var(--primary); color: var(--on-primary); font-weight: 700; cursor: pointer; box-shadow: 0 3px 8px rgba(92,67,19,.24); transition: transform .2s ease, box-shadow .2s ease; }
 .m3-button:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(103,80,164,.25); }
 .m3-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 20px; }
+.anime-card-title { font-family: 'Zen Maru Gothic', system-ui, sans-serif; font-weight: 900; letter-spacing: .01em; }
+.anime-card-synopsis { font-family: 'Zen Maru Gothic', system-ui, sans-serif; font-weight: 500; }
+.admin-form-grid { grid-template-columns: minmax(220px, 1.2fr) minmax(240px, 1.1fr) minmax(170px, .8fr) minmax(190px, .95fr) !important; width: 100%; }
+@media (max-width: 1250px) { .admin-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
 .admin-layout { height: calc(100vh - 80px); display: grid !important; grid-template-columns: minmax(0, 1.15fr) minmax(360px, .85fr); grid-template-rows: auto auto auto 1fr; column-gap: 24px; padding: 20px 32px !important; overflow: hidden !important; }
 .admin-layout > .admin-fixed { display: contents; }
 .admin-layout > .admin-fixed > header, .admin-layout > .admin-fixed > [role='alert'] { grid-column: 1 / -1; }

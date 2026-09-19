@@ -15,6 +15,11 @@ const stateKey = 'anime-vault-anime-list-state';
 
 function getSavedListState() {
   if (typeof window === 'undefined') return {};
+  const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+  if (navigation?.type === 'reload') {
+    sessionStorage.removeItem(stateKey);
+    return {};
+  }
   try {
     return JSON.parse(sessionStorage.getItem(stateKey) || '{}') as { search?: string; sortBy?: SortKey; visibleCount?: number; scrollY?: number };
   } catch {

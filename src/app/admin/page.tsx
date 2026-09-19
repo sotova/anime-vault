@@ -70,7 +70,7 @@ function AdminContent() {
     const query = searchQuery.trim().toLocaleLowerCase();
     if (yearFilter && !a.season.includes(yearFilter)) return false;
     if (seasonFilter && !a.season.includes(seasonFilter)) return false;
-    if (query && !a.title.toLocaleLowerCase().includes(query)) return false;
+    if (query && !a.title.trim().toLocaleLowerCase().includes(query)) return false;
     if (emptyFilter) {
       if (emptyFilter === 'tags' && a.tags.length > 0) return false;
       if (emptyFilter === 'synopsis' && a.synopsis) return false;
@@ -204,7 +204,7 @@ function AdminContent() {
 
           {activeTab === 'edit' ? (
             <form onSubmit={handleSave}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 150px 200px', gap: '20px' }}>
+              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 150px 200px', gap: '20px' }}>
                 {/* 基本情報 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <input style={inputStyle} value={form.title} required onChange={e => setForm({ ...form, title: e.target.value })} placeholder="タイトル *" />
