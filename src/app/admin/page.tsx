@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useAnimeData } from '@/hooks/useAnimeData';
 import { Anime } from '@/types/anime';
 import { read, utils } from 'xlsx';
@@ -66,10 +66,11 @@ function AdminContent() {
   const uniqueYears = Array.from(new Set(animeList.map(a => a.season.match(/\d{4}/)?.[0]).filter(Boolean))).sort((a, b) => Number(b) - Number(a));
   const uniqueSeasons = ['冬', '春', '夏', '秋'];
 
-  const filteredList = animeList.filter(a => {
+  const filteredList = useMemo(() => animeList.filter(a => {
+    const query = searchQuery.trim().toLocaleLowerCase();
     if (yearFilter && !a.season.includes(yearFilter)) return false;
     if (seasonFilter && !a.season.includes(seasonFilter)) return false;
-    if (searchQuery && !a.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (query && !a.title.toLocaleLowerCase().includes(query)) return false;
     if (emptyFilter) {
       if (emptyFilter === 'tags' && a.tags.length > 0) return false;
       if (emptyFilter === 'synopsis' && a.synopsis) return false;
@@ -78,7 +79,7 @@ function AdminContent() {
       if (emptyFilter === 'official_site' && a.official_site) return false;
     }
     return true;
-  }).sort((a, b) => compareSeasons(a.season, b.season, false));
+  }).sort((a, b) => compareSeasons(a.season, b.season, false)), [animeList, emptyFilter, searchQuery, seasonFilter, yearFilter]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,10 +142,10 @@ function AdminContent() {
   };
 
   return (
-    <div style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column', padding: '20px 32px', boxSizing: 'border-box', overflow: 'hidden' }}>
+    <div className="admin-layout" style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column', padding: '20px 32px', boxSizing: 'border-box', overflow: 'hidden' }}>
 
       {/* 固定エリア: ヘッダー + フォーム/結合 + フィルター */}
-      <div style={{ flexShrink: 0 }}>
+      <div className="admin-fixed" style={{ flexShrink: 0 }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px' }}>
           <div>
             <h1 style={{
@@ -185,7 +186,7 @@ function AdminContent() {
         )}
 
         {/* フォーム / シリーズ結合エリア */}
-        <div style={{
+        <div className="admin-editor" style={{
           background: '#fffbff', border: '1px solid #cac4d0', borderRadius: '24px',
           padding: '24px', marginBottom: '24px', boxShadow: '0 4px 12px rgba(49,45,65,0.08)',
         }}>
@@ -300,12 +301,12 @@ function AdminContent() {
         </div>
 
         {/* フィルター / 検索バー */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', background: '#fffbff', padding: '12px 20px', borderRadius: '16px', border: '1px solid #1a1a1a' }}>
+        <div className="admin-filters" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', background: '#fffbff', padding: '12px 20px', borderRadius: '16px', border: '1px solid #1a1a1a' }}>
           <h2 style={{ fontSize: '14px', color: '#6750a4', margin: 0 }}>
             作品リスト <span style={{ color: '#49454f', fontSize: '12px', fontWeight: 'normal' }}>({filteredList.length} / {animeList.length})</span>
           </h2>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <input style={{ ...inputStyle, padding: '8px 12px', width: '180px', fontSize: '13px' }} placeholder="タイトル検索..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            <input type="search" style={{ ...inputStyle, padding: '8px 12px', width: '180px', fontSize: '13px' }} placeholder="タイトル検索..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
             <select style={{ ...inputStyle, padding: '8px 12px', width: '110px', fontSize: '13px' }} value={yearFilter} onChange={e => setYearFilter(e.target.value)}>
               <option value="">全放送年</option>
               {uniqueYears.map(year => <option key={year} value={year}>{year}年</option>)}
@@ -327,8 +328,9 @@ function AdminContent() {
       </div>
 
       {/* スクロール可能なリストエリア */}
-      <div style={{ flexGrow: 1, overflowY: 'auto', paddingRight: '10px', scrollbarWidth: 'thin' }}>
+      <div className="admin-list" style={{ flexGrow: 1, overflowY: 'auto', paddingRight: '10px', scrollbarWidth: 'thin' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '40px' }}>
+          {filteredList.length === 0 && <div className="admin-empty">条件に一致する作品がありません。</div>}
           {filteredList.map(a => (
             <div key={a.id} style={{
               background: '#fffbff', padding: '14px 24px', border: '1px solid #cac4d0',
