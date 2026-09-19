@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { getBaseTitle } from '@/utils/animeUtils';
 import { Globe, FileSpreadsheet, X } from 'lucide-react';
+import { RemoteImage } from '@/components/RemoteImage';
 
 const INITIAL_FORM: Omit<Anime, 'created_at'> = {
   id: '', title: '', tags: [], synopsis: '', image_url: '', pv_url: '',
@@ -213,8 +214,8 @@ function AdminContent() {
 
                 {/* 画像プレビュー */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ width: '100%', height: '100px', background: '#f3edf7', borderRadius: '8px', overflow: 'hidden', border: '1px solid #cac4d0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {form.image_url ? <img src={form.image_url} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}} /> : <span style={{color:'#79747e', fontSize:'10px'}}>No Image</span>}
+                  <div style={{ width: '100%', height: '100px', background: '#f3edf7', borderRadius: '8px', overflow: 'hidden', border: '1px solid #cac4d0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                    <RemoteImage src={form.image_url} alt="" placeholder="No Image" />
                   </div>
                   <input style={{...inputStyle, fontSize: '11px', padding: '8px'}} value={form.image_url} onChange={e => setForm({ ...form, image_url: e.target.value })} placeholder="画像 URL" />
                 </div>
@@ -326,8 +327,8 @@ function AdminContent() {
               onMouseEnter={e => (e.currentTarget.style.borderColor = '#6750a433')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = '#cac4d0')}
             >
-              <div style={{ width: '38px', height: '52px', borderRadius: '6px', background: '#f7f2fa', overflow: 'hidden', flexShrink: 0 }}>
-                {a.image_url && <img src={a.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+              <div style={{ width: '38px', height: '52px', borderRadius: '6px', background: '#f7f2fa', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
+                <RemoteImage src={a.image_url} alt="" placeholder="" />
               </div>
               <div style={{ flex: 1, overflow: 'hidden' }}>
                 <div style={{ fontWeight: '600', fontSize: '14px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{a.title}</div>

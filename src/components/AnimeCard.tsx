@@ -2,9 +2,9 @@
 
 import { HybridAnime } from '@/types/anime';
 import { StarRating } from './StarRating';
+import { RemoteImage } from './RemoteImage';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 
 interface AnimeCardProps { anime: HybridAnime; showProgress?: boolean; index?: number; }
 const statusColors: Record<string, string> = { '見たい': '#6750a4', '視聴中': '#006a6a', '完了': '#2e7d32', '保留': '#a15c00', '視聴切り': '#b3261e' };
@@ -14,7 +14,7 @@ export function AnimeCard({ anime, showProgress = false, index = 0 }: AnimeCardP
   return <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .36, delay: Math.min(index * .025, .35) }}>
     <Link href={`/anime/${anime.id}`} style={{ textDecoration: 'none' }} aria-label={`${anime.title}の詳細を見る`}>
       <motion.article whileHover={{ y: -6, scale: 1.015 }} transition={{ type: 'spring', stiffness: 360, damping: 23 }} style={{ overflow: 'hidden', position: 'relative', aspectRatio: '3 / 4', borderRadius: 22, background: '#e7e0ec', boxShadow: '0 8px 20px rgba(49,45,65,.16)', border: '1px solid rgba(121,116,126,.18)' }}>
-        {anime.image_url ? <Image src={anime.image_url} alt={anime.title} fill sizes="(max-width: 768px) 42vw, (max-width: 1200px) 20vw, 240px" loading="lazy" style={{ objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: '#79747e', fontSize: 12 }}>NO COVER</div>}
+        <RemoteImage src={anime.image_url} alt={anime.title} sizes="(max-width: 768px) 42vw, (max-width: 1200px) 20vw, 240px" />
         {status && <span style={{ position: 'absolute', top: 10, right: 10, background: statusColors[status] || '#49454f', color: '#fff', padding: '5px 9px', borderRadius: 999, fontSize: 10, fontWeight: 800, boxShadow: '0 2px 8px rgba(0,0,0,.22)' }}>{status}</span>}
         <div style={{ position: 'absolute', inset: '35% 0 0', background: 'linear-gradient(transparent, rgba(29,27,32,.93))' }} />
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 13, color: '#fff' }}>

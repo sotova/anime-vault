@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useAnimeData } from '@/hooks/useAnimeData';
 import { AnimeCard } from '@/components/AnimeCard';
+import { RemoteImage } from '@/components/RemoteImage';
 import { StarRating } from '@/components/StarRating';
 import { AnimeStatus } from '@/types/anime';
 import { motion } from 'framer-motion';
@@ -182,12 +183,8 @@ export default function AnimeDetailPage() {
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
-            ) : anime.image_url ? (
-              <img src={anime.image_url} alt={anime.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#49454f' }}>
-                映像なし
-              </div>
+              <RemoteImage src={anime.image_url} alt={anime.title} placeholder="映像なし" sizes="(max-width: 768px) 100vw, 50vw" />
             )}
           </div>
 
