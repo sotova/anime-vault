@@ -76,12 +76,12 @@ export default function AnimeDetailPage() {
   const videoId = getYouTubeId(anime.pv_url);
 
   return (
-    <motion.div className="m3-page" initial={reducedMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: isLeaving ? 0 : 1, y: isLeaving ? -8 : 0 }} transition={{ duration: reducedMotion ? 0 : .3, ease: 'easeOut' }}>
+    <motion.div className="m3-page anime-detail-page" initial={reducedMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: isLeaving ? 0 : 1, y: isLeaving ? -8 : 0 }} transition={{ duration: reducedMotion ? 0 : .3, ease: 'easeOut' }}>
       <button type="button" onClick={handleBack} style={{ marginBottom: '24px', padding: '9px 14px', background: 'var(--surface-container)', color: 'var(--on-surface)', border: '1px solid var(--outline)', borderRadius: '999px', cursor: 'pointer', fontWeight: 'bold' }}>← 一覧に戻る</button>
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(320px, .9fr)', gap: '48px', marginBottom: '48px' }}>
+      <div className="anime-detail-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(320px, .9fr)', gap: '48px', marginBottom: '48px' }}>
         {/* Left: Info */}
-          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: reducedMotion ? 0 : .3, ease: 'easeOut' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '16px' }}>{anime.title}</h1>
+          <motion.div className="anime-detail-info" initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: reducedMotion ? 0 : .3, ease: 'easeOut' }}>
+          <h1 className="anime-detail-title" style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '16px' }}>{anime.title}</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
             {anime.season && <div style={{ fontSize: '16px', color: '#6750a4', fontWeight: 'bold' }}>{anime.season}</div>}
             <button
@@ -132,7 +132,7 @@ export default function AnimeDetailPage() {
             ))}
           </div>
 
-          <div style={{ marginBottom: '24px' }}>
+          <div className="anime-detail-status" style={{ marginBottom: '24px' }}>
             <div style={{ fontSize: '12px', color: '#49454f', marginBottom: '8px' }}>あなたの評価</div>
             <StarRating value={rating} size={32} onChange={(v) => updateUserData(anime.id, { rating: v })} />
           </div>
@@ -169,7 +169,7 @@ export default function AnimeDetailPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
+          <div className="anime-detail-actions" style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
             {!anime.userData ? (
               <motion.button onClick={() => updateUserData(anime.id, { status: '見たい', rating: 0, progress: 0 })}
                 whileHover={reducedMotion ? undefined : { scale: 1.01 }} whileTap={reducedMotion ? undefined : { scale: .98 }} transition={{ duration: reducedMotion ? 0 : .3, ease: 'easeOut' }}
@@ -184,7 +184,7 @@ export default function AnimeDetailPage() {
         </motion.div>
 
         {/* Right: Media */}
-        <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: reducedMotion ? 0 : .3, ease: 'easeOut' }}>
+        <motion.div className="anime-detail-media" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: reducedMotion ? 0 : .3, ease: 'easeOut' }}>
           <div style={{ aspectRatio: '16/9', background: '#f3edf7', borderRadius: '24px', overflow: 'hidden', position: 'relative' }}>
             {videoId ? (
               <iframe

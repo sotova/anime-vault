@@ -20,6 +20,7 @@ const NAV_ITEMS = [
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
+  const [isMobileNavVisible, setIsMobileNavVisible] = useState(true);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
@@ -27,6 +28,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  useEffect(() => {
+    if (!isMobile) return;
+
+    let lastScrollY = window.scrollY;
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY <= 12 || currentScrollY < lastScrollY) {
+        setIsMobileNavVisible(true);
+      } else if (currentScrollY > lastScrollY + 4) {
+        setIsMobileNavVisible(false);
+      }
+      lastScrollY = currentScrollY;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isMobile]);
 
   return (
     <html lang="ja" suppressHydrationWarning>
@@ -62,7 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 position: 'fixed', bottom: 0, left: 0, right: 0, 
                 height: '76px', background: 'var(--surface-container)', borderTop: '1px solid var(--outline)', boxShadow: '0 -8px 24px rgba(49,45,65,.08)',
                 display: 'flex', justifyContent: 'space-around', alignItems: 'center',
-                zIndex: 200, paddingBottom: 'env(safe-area-inset-bottom)'
+                zIndex: 200, paddingBottom: 'env(safe-area-inset-bottom)', transform: isMobileNavVisible ? 'translateY(0)' : 'translateY(calc(100% + 1px))', opacity: isMobileNavVisible ? 1 : 0, transition: 'transform .3s ease, opacity .3s ease', pointerEvents: isMobileNavVisible ? 'auto' : 'none'
               }}>
                 {NAV_ITEMS.map((item) => {
                   const isActive = pathname === item.href;

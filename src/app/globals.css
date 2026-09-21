@@ -61,3 +61,14 @@ option { color: var(--on-surface); background: var(--surface-container); }
 .admin-empty { padding: 32px 16px; color: var(--on-surface-variant); text-align: center; background: var(--surface-container); border: 1px solid var(--outline); border-radius: 12px; }
 @media (max-width: 1100px) { .admin-layout { display: flex !important; height: auto; min-height: calc(100vh - 80px); overflow: visible !important; } .admin-layout > .admin-fixed { display: block; } .admin-layout > .admin-fixed > header, .admin-layout > .admin-fixed > [role='alert'], .admin-layout > .admin-fixed > .admin-editor, .admin-layout > .admin-fixed > .admin-filters, .admin-layout > .admin-list { display: block; width: 100%; margin-top: 0; } .admin-layout > .admin-list { overflow: visible; } }
 @media (max-width: 768px) { .app-main { padding-bottom: 94px; } .m3-page { padding: 28px 18px; } .m3-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 14px; } }
+@media (max-width: 768px) {
+	.anime-detail-page { padding: 24px 16px 100px; min-width: 0; overflow-x: hidden; }
+	.anime-detail-layout { grid-template-columns: minmax(0, 1fr) !important; gap: 28px !important; margin-bottom: 32px !important; }
+	.anime-detail-info, .anime-detail-media { min-width: 0; width: 100%; }
+	.anime-detail-title { font-size: clamp(24px, 7vw, 32px) !important; line-height: 1.3; overflow-wrap: anywhere; }
+	.anime-detail-status > div:last-child { gap: 6px !important; }
+	.anime-detail-status button { padding: 8px 12px !important; font-size: 12px !important; }
+	.anime-detail-actions { margin-top: 24px !important; }
+	.anime-detail-actions button { min-width: 0; }
+	.anime-detail-media iframe { display: block; max-width: 100%; }
+}
