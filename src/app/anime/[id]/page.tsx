@@ -144,7 +144,7 @@ export default function AnimeDetailPage() {
                 const statusStyle = ANIME_STATUS_STYLES[s];
                 const isActive = anime.userData?.status === s;
                 return (
-                  <motion.button key={s} onClick={() => updateUserData(anime.id, { status: s })} animate={{ scale: isActive ? 1.03 : 1 }} transition={{ duration: reducedMotion ? 0 : .3, ease: 'easeOut' }}
+                  <motion.button key={s} onClick={() => updateUserData(anime.id, { status: s })} animate={{ scale: isActive ? 1.03 : 1 }} whileHover={reducedMotion ? undefined : { scale: isActive ? 1.05 : 1.03 }} whileTap={reducedMotion ? undefined : { scale: .97 }} transition={{ duration: reducedMotion ? 0 : .3, ease: 'easeOut' }}
                     style={{
                       position: 'relative', overflow: 'hidden', isolation: 'isolate', padding: '8px 18px', borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer',
                       background: '#e7e0ec',
@@ -171,9 +171,10 @@ export default function AnimeDetailPage() {
 
           <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
             {!anime.userData ? (
-              <button onClick={() => updateUserData(anime.id, { status: '見たい', rating: 0, progress: 0 })}
-                style={{ flex: 1, padding: '16px', background: '#6750a4', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}
-              >＋ライブラリに追加</button>
+              <motion.button onClick={() => updateUserData(anime.id, { status: '見たい', rating: 0, progress: 0 })}
+                whileHover={reducedMotion ? undefined : { scale: 1.01 }} whileTap={reducedMotion ? undefined : { scale: .98 }} transition={{ duration: reducedMotion ? 0 : .3, ease: 'easeOut' }}
+                style={{ flex: 1, padding: '16px', background: 'var(--primary)', color: 'var(--on-primary)', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}
+              >＋ライブラリに追加</motion.button>
             ) : (
               <button onClick={() => { if(confirm('ライブラリから削除しますか？')) removeFromLibrary(anime.id); }}
                 style={{ flex: 1, padding: '16px', background: '#79747e', color: '#f87171', border: '1px solid #79747e', borderRadius: '12px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' }}

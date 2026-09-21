@@ -38,7 +38,7 @@ function AdminContent() {
   const [seasonFilter, setSeasonFilter] = useState('');
   const [emptyFilter, setEmptyFilter] = useState('');
   
-  const [activeTab, setActiveTab] = useState<'edit' | 'merge'>('edit');
+  const [activeTab, setActiveTab] = useState<'edit' | 'merge' | 'tags'>('edit');
   const [baseAnimeId, setBaseAnimeId] = useState('');
   const [targetAnimeIds, setTargetAnimeIds] = useState<string[]>([]);
   const [mergeSearch, setMergeSearch] = useState('');
@@ -131,6 +131,55 @@ function AdminContent() {
     reader.readAsBinaryString(file);
   };
 
+  const handleTagFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const workbook = read(evt.target?.result, { type: 'binary' });
+        const rows = utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]) as Record<string, unknown>[];
+        const normalizeTitle = (value: string) => value.normalize('NFKC').replace(/[\s　]+/g, '').toLocaleLowerCase('ja-JP');
+        const animeByTitle = new Map(animeList.map(anime => [normalizeTitle(anime.title), anime]));
+        const updatesById = new Map<string, Anime>();
+        let skippedRows = 0;
+
+        rows.forEach(row => {
+          const title = getVal(row, ['タイトル', '作品名', 'アニメタイトル', 'title', 'name']);
+          const tags = getVal(row, ['タグ', 'tags', 'tag', 'カテゴリ', 'category'])
+            .split(/[,、\n]/).map(tag => tag.trim()).filter(Boolean);
+          const matchedAnime = animeByTitle.get(normalizeTitle(title));
+          if (!matchedAnime || tags.length === 0) {
+            skippedRows += 1;
+            return;
+          }
+
+          const currentAnime = updatesById.get(matchedAnime.id) || matchedAnime;
+          const mergedTags = Array.from(new Set([...currentAnime.tags, ...tags]));
+          updatesById.set(matchedAnime.id, { ...currentAnime, tags: mergedTags });
+        });
+
+        const updates = Array.from(updatesById.values()).filter((anime) => {
+          const original = animeList.find(item => item.id === anime.id);
+          return original && anime.tags.join('\u0000') !== original.tags.join('\u0000');
+        });
+
+        if (updates.length === 0) {
+          alert(`タグを追加できる作品がありませんでした。対象外: ${skippedRows}件`);
+          return;
+        }
+
+        const saved = await bulkUpsert(updates);
+        alert(saved ? `${updates.length}件の作品にタグを追加しました。対象外: ${skippedRows}件` : 'タグの保存に失敗しました。エラー表示を確認してください。');
+      } catch (error) {
+        alert(`XLSXを読み込めませんでした: ${error instanceof Error ? error.message : String(error)}`);
+      } finally {
+        e.target.value = '';
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '13px 16px', background: '#fffbff',
     border: '1px solid #2a2a2a', borderRadius: '12px', color: '#1d1b20',
@@ -201,6 +250,10 @@ function AdminContent() {
               background: 'transparent', border: 'none', color: activeTab === 'merge' ? '#6750a4' : '#49454f',
               fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', borderBottom: activeTab === 'merge' ? '2px solid #6750a4' : 'none', paddingBottom: '8px'
             }}>シリーズ結合</button>
+            <button onClick={() => setActiveTab('tags')} style={{
+              background: 'transparent', border: 'none', color: activeTab === 'tags' ? '#6750a4' : '#49454f',
+              fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', borderBottom: activeTab === 'tags' ? '2px solid #6750a4' : 'none', paddingBottom: '8px'
+            }}>タグ一括適用</button>
           </div>
 
           {activeTab === 'edit' ? (
@@ -246,7 +299,7 @@ function AdminContent() {
                 </div>
               </div>
             </form>
-          ) : (
+          ) : activeTab === 'merge' ? (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 200px', gap: '20px' }}>
               <div>
                 <label style={labelStyle}>親作品を選択</label>
@@ -296,6 +349,22 @@ function AdminContent() {
                 >
                   結合を実行
                 </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: '16px', maxWidth: '720px' }}>
+              <div>
+                <label style={labelStyle}>既存作品へタグを追加するXLSX</label>
+                <p style={{ margin: '0 0 12px', color: '#49454f', fontSize: '13px', lineHeight: 1.6 }}>
+                  「タイトル」または「作品名」列と、「タグ」列を持つXLSXを選択してください。タイトルが一致した作品だけにタグを追加します。
+                </p>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 16px', background: 'var(--primary)', color: 'var(--on-primary)', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
+                  <FileSpreadsheet size={16} /> XLSXを選択してタグを適用
+                  <input type="file" accept=".xlsx,.xls" onChange={handleTagFileUpload} style={{ display: 'none' }} />
+                </label>
+              </div>
+              <div style={{ padding: '14px 16px', background: 'var(--surface-container)', borderRadius: '12px', color: 'var(--on-surface-variant)', fontSize: '12px', lineHeight: 1.6 }}>
+                既存タグは保持され、同じタグは重複登録されません。一致しないタイトルやタグが空の行はスキップされます。
               </div>
             </div>
           )}
