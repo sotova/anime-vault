@@ -2,6 +2,19 @@ import { Anime } from '@/types/anime';
 
 export const SEASON_ORDER = ['冬', '春', '夏', '秋'] as const;
 
+export function normalizeSearchText(value: string): string {
+  return value.normalize('NFKC').trim().toLocaleLowerCase('ja-JP');
+}
+
+export function matchesAnimeSearch(anime: Anime, query: string): boolean {
+  const normalizedQuery = normalizeSearchText(query);
+  if (!normalizedQuery) return true;
+
+  return [anime.title, ...anime.tags, anime.season]
+    .map(normalizeSearchText)
+    .some(value => value.includes(normalizedQuery));
+}
+
 export function getSeasonOrder(season: string | null | undefined): number {
   const value = season || '';
   const index = SEASON_ORDER.findIndex(name => value.includes(name));

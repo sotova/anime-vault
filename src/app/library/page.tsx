@@ -1,31 +1,56 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAnimeData } from '@/hooks/useAnimeData';
 import { AnimeCard } from '@/components/AnimeCard';
-import { AnimeStatus } from '@/types/anime';
-import { motion } from 'framer-motion';
+import { ANIME_STATUS_OPTIONS, AnimeStatus } from '@/types/anime';
+import { AnimatePresence, motion } from 'framer-motion';
 import { compareSeasons } from '@/utils/animeUtils';
 
 const TABS: { label: string; value: AnimeStatus | 'すべて' }[] = [
   { label: 'すべて', value: 'すべて' },
-  { label: '見たい', value: '見たい' },
-  { label: '視聴中', value: '視聴中' },
-  { label: '完了', value: '完了' },
-  { label: '保留', value: '保留' },
-  { label: '視聴切り', value: '視聴切り' },
+  ...ANIME_STATUS_OPTIONS.map((status) => ({ label: status, value: status })),
 ];
 
 type SortKey = 'title' | 'rating' | 'season';
+const libraryStateKey = 'anime-vault-library-state';
+
+function getSavedLibraryState() {
+  if (typeof window === 'undefined') return {};
+  const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+  if (navigation?.type === 'reload') {
+    sessionStorage.removeItem(libraryStateKey);
+    return {};
+  }
+  try {
+    return JSON.parse(sessionStorage.getItem(libraryStateKey) || '{}') as { activeTab?: AnimeStatus | 'すべて'; search?: string; sortBy?: SortKey; scrollY?: number };
+  } catch {
+    return {};
+  }
+}
 
 export default function LibraryPage() {
   const { animeList, loading, exportUserData, importUserData } = useAnimeData();
-  const [activeTab, setActiveTab] = useState<AnimeStatus | 'すべて'>('すべて');
-  const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState<SortKey>('title');
+  const [activeTab, setActiveTab] = useState<AnimeStatus | 'すべて'>(() => getSavedLibraryState().activeTab || 'すべて');
+  const [search, setSearch] = useState(() => getSavedLibraryState().search || '');
+  const [sortBy, setSortBy] = useState<SortKey>(() => getSavedLibraryState().sortBy || 'title');
+
+  useEffect(() => {
+    if (loading) return;
+    const { scrollY } = getSavedLibraryState();
+    requestAnimationFrame(() => window.scrollTo(0, scrollY || 0));
+  }, [loading]);
+
+  const saveLibraryState = () => {
+    sessionStorage.setItem(libraryStateKey, JSON.stringify({ activeTab, search, sortBy, scrollY: window.scrollY }));
+  };
 
   // ライブラリに追加された作品（userDataがあるもの）のみを対象にする
   const myLibrary = useMemo(() => animeList.filter(a => a.userData), [animeList]);
+  const statusCounts = useMemo(() => ANIME_STATUS_OPTIONS.reduce<Record<AnimeStatus, number>>((counts, status) => {
+    counts[status] = myLibrary.filter(anime => anime.userData?.status === status).length;
+    return counts;
+  }, {} as Record<AnimeStatus, number>), [myLibrary]);
 
   const filtered = useMemo(() => {
     let list = myLibrary;
@@ -68,9 +93,9 @@ export default function LibraryPage() {
             style={{
               padding: '8px 20px', borderRadius: '6px', border: '1px solid #79747e', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer',
               background: activeTab === tab.value ? '#e9ddff' : 'transparent',
-              color: activeTab === tab.value ? '#21005d' : '#49454f', transition: 'all 0.2s',
+              color: activeTab === tab.value ? '#21005d' : '#49454f', transition: 'transform .3s ease, opacity .3s ease',
             }}
-          >{tab.label}</button>
+          >{tab.label}({tab.value === 'すべて' ? myLibrary.length : statusCounts[tab.value]})</button>
         ))}
       </div>
 
@@ -105,7 +130,9 @@ export default function LibraryPage() {
       {/* Grid */}
       {filtered.length > 0 ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))', gap: '20px' }}>
-          {filtered.map((a, i) => <AnimeCard key={a.id} anime={a} showProgress index={i} />)}
+          <AnimatePresence initial={false} mode="popLayout">
+            {filtered.map((a, i) => <AnimeCard key={a.id} anime={a} showProgress index={i} onNavigate={saveLibraryState} />)}
+          </AnimatePresence>
         </div>
       ) : (
         <div style={{ padding: '60px', textAlign: 'center', color: '#666', background: '#f3edf7', border: '1px solid #e7e0ec', borderRadius: '24px' }}>

@@ -4,8 +4,8 @@ import { useState, useMemo, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAnimeData } from '@/hooks/useAnimeData';
 import { AnimeCard } from '@/components/AnimeCard';
-import { motion } from 'framer-motion';
-import { compareSeasons, getBaseTitle } from '@/utils/animeUtils';
+import { AnimatePresence, motion } from 'framer-motion';
+import { compareSeasons, getBaseTitle, matchesAnimeSearch } from '@/utils/animeUtils';
 import { Anime } from '@/types/anime';
 
 type SortKey = 'title' | 'season' | 'newest';
@@ -35,7 +35,7 @@ function AnimeListContent() {
   const [visibleCount, setVisibleCount] = useState(() => getSavedListState().visibleCount || PAGE_SIZE);
   const restoredState = useRef(true);
 
-  // URLパラメータにseasonがあれば初期値としてセットする
+  // URLパラメータにtagまたはseasonがあれば検索条件としてセットする
   useEffect(() => {
     const { scrollY } = getSavedListState();
     requestAnimationFrame(() => window.scrollTo(0, scrollY || 0));
@@ -46,24 +46,17 @@ function AnimeListContent() {
   };
 
   useEffect(() => {
-    const seasonQuery = searchParams.get('season');
-    if (seasonQuery) {
+    const searchQuery = searchParams.get('tag') ?? searchParams.get('season');
+    if (searchQuery !== null) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSearch(seasonQuery);
+      setSearch(searchQuery);
     }
   }, [searchParams]);
 
   const filtered = useMemo(() => {
     let list = [...animeList];
     
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter((a) =>
-        a.title.toLowerCase().includes(q) ||
-        a.tags.some((t) => t.toLowerCase().includes(q)) ||
-        (a.season && a.season.toLowerCase().includes(q))
-      );
-    }
+    list = list.filter((a) => matchesAnimeSearch(a, search));
 
     list.sort((a, b) => {
       if (sortBy === 'title') return a.title.localeCompare(b.title, 'ja');
@@ -123,6 +116,8 @@ function AnimeListContent() {
 
       <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', alignItems: 'center', flexWrap: 'wrap' }}>
         <input
+          type="search"
+          aria-label="作品を検索"
           placeholder="タイトル・タグ・年代で検索..."
           value={search} onChange={(e) => setSearch(e.target.value)}
           style={{
@@ -142,7 +137,9 @@ function AnimeListContent() {
       {filtered.length > 0 ? (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))', gap: '20px' }}>
-            {visibleAnime.map((a, i) => <AnimeCard key={a.id} anime={a} index={i} onNavigate={saveListState} />)}
+            <AnimatePresence initial={false} mode="popLayout">
+              {visibleAnime.map((a, i) => <AnimeCard key={a.id} anime={a} index={i} onNavigate={saveListState} />)}
+            </AnimatePresence>
           </div>
           {hasMore && (
             <div style={{ textAlign: 'center', marginTop: '24px' }}>
@@ -151,9 +148,9 @@ function AnimeListContent() {
                 onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
                 style={{
                   padding: '12px 20px',
-                  background: '#6750a4',
-                  color: '#fff',
-                  border: '1px solid #6750a4',
+                  background: 'var(--primary)',
+                  color: 'var(--on-primary)',
+                  border: '1px solid var(--primary)',
                   borderRadius: '999px',
                   cursor: 'pointer',
                   fontWeight: 'bold',
@@ -166,7 +163,7 @@ function AnimeListContent() {
         </>
       ) : (
         <div style={{ padding: '80px', textAlign: 'center', color: '#666', background: '#111', borderRadius: '16px' }}>
-          条件に合う作品が見つかりませんでした。
+          {search.trim() ? '該当する作品がありません。' : '作品がありません。'}
         </div>
       )}
     </div>

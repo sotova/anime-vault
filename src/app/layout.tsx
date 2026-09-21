@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Home, Search, BookOpen, Settings } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { MotionConfig } from 'framer-motion';
 
 const NAV_ITEMS = [
   { label: 'ホーム', href: '/', icon: Home },
@@ -34,7 +35,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
       </head>
       <body>
-        <AnimeProvider>
+        <MotionConfig reducedMotion="user">
+          <AnimeProvider>
           <div className="app-shell">
             
             {/* Desktop Sidebar */}
@@ -79,7 +81,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </nav>
             )}
           </div>
-        </AnimeProvider>
+          </AnimeProvider>
+        </MotionConfig>
       </body>
     </html>
   );

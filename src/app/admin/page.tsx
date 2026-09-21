@@ -9,6 +9,7 @@ import { useSearchParams } from 'next/navigation';
 import { compareSeasons, getBaseTitle } from '@/utils/animeUtils';
 import { Globe, FileSpreadsheet, X } from 'lucide-react';
 import { RemoteImage } from '@/components/RemoteImage';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const INITIAL_FORM: Omit<Anime, 'created_at'> = {
   id: '', title: '', tags: [], synopsis: '', image_url: '', pv_url: '',
@@ -161,7 +162,7 @@ function AdminContent() {
             <Link href="/admin/scraper" style={{
               padding: '8px 16px', background: 'transparent', color: '#6750a4',
               border: '1px solid #6750a466', borderRadius: '10px', textDecoration: 'none',
-              fontSize: '12px', transition: 'all 0.2s'
+              fontSize: '12px', transition: 'transform .3s ease, opacity .3s ease'
             }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                 <Globe size={14} />自動取得ツール
@@ -204,7 +205,7 @@ function AdminContent() {
 
           {activeTab === 'edit' ? (
             <form onSubmit={handleSave}>
-              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 150px 200px', gap: '20px' }}>
+              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '20px', alignItems: 'start' }}>
                 {/* 基本情報 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <input style={inputStyle} value={form.title} required onChange={e => setForm({ ...form, title: e.target.value })} placeholder="タイトル *" />
@@ -217,7 +218,7 @@ function AdminContent() {
 
                 {/* あらすじ */}
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <textarea style={{...inputStyle, height: '100%', minHeight: '120px', resize: 'none'}} value={form.synopsis} onChange={e => setForm({ ...form, synopsis: e.target.value })} placeholder="あらすじ..." />
+                  <textarea style={{...inputStyle, minHeight: '180px', resize: 'vertical'}} value={form.synopsis} onChange={e => setForm({ ...form, synopsis: e.target.value })} placeholder="あらすじ..." />
                 </div>
 
                 {/* 画像プレビュー */}
@@ -233,7 +234,7 @@ function AdminContent() {
                   <input style={{...inputStyle, padding: '8px 12px', fontSize: '12px'}} value={form.pv_url} onChange={e => setForm({ ...form, pv_url: e.target.value })} placeholder="PV URL (YouTube)" />
                   <input style={{...inputStyle, padding: '8px 12px', fontSize: '12px'}} value={form.official_site} onChange={e => setForm({ ...form, official_site: e.target.value })} placeholder="公式サイト URL" />
                   <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                    <button type="submit" style={{ flex: 1, padding: '10px', background: '#6750a4', color: '#fff', borderRadius: '10px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>
+                    <button type="submit" style={{ flex: 1, padding: '10px', background: 'var(--primary)', color: 'var(--on-primary)', borderRadius: '10px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>
                       {form.id ? '更新' : '保存'}
                     </button>
                     {form.id && <button type="button" onClick={() => { setForm(INITIAL_FORM); setTagInput(''); }} style={{ padding: '10px', background: 'transparent', color: '#49454f', border: '1px solid #79747e', borderRadius: '10px', cursor: 'pointer', fontSize: '12px' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><X size={14} />中止</span></button>}
@@ -331,11 +332,12 @@ function AdminContent() {
       <div className="admin-list" style={{ flexGrow: 1, overflowY: 'auto', paddingRight: '10px', scrollbarWidth: 'thin' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '40px' }}>
           {filteredList.length === 0 && <div className="admin-empty">条件に一致する作品がありません。</div>}
-          {filteredList.map(a => (
-            <div key={a.id} style={{
+          <AnimatePresence initial={false} mode="popLayout">
+            {filteredList.map(a => (
+            <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: .98 }} transition={{ duration: .3, ease: 'easeOut' }} style={{
               background: '#fffbff', padding: '14px 24px', border: '1px solid #cac4d0',
               borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '20px',
-              transition: 'all 0.2s',
+              transition: 'transform .3s ease, opacity .3s ease',
             }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = '#6750a433')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = '#cac4d0')}
@@ -353,8 +355,9 @@ function AdminContent() {
                 <button onClick={() => startEdit(a)} style={{ padding: '7px 16px', background: '#f3edf7', color: '#1d1b20', border: '1px solid #2a2a2a', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>編集</button>
                 <button onClick={() => deleteAnime(a.id)} style={{ padding: '7px 16px', background: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>削除</button>
               </div>
-            </div>
-          ))}
+            </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       </div>
     </div>

@@ -5,11 +5,12 @@ import { useAnimeData } from '@/hooks/useAnimeData';
 import { AnimeCard } from '@/components/AnimeCard';
 import { RemoteImage } from '@/components/RemoteImage';
 import { StarRating } from '@/components/StarRating';
-import { AnimeStatus } from '@/types/anime';
-import { motion } from 'framer-motion';
-import { useMemo } from 'react';
+import { ANIME_STATUS_OPTIONS, ANIME_STATUS_STYLES } from '@/types/anime';
+import { motion, useReducedMotion } from 'framer-motion';
+import { useMemo, useState } from 'react';
 import { compareSeasons, getBaseTitle } from '@/utils/animeUtils';
 import { Pencil } from 'lucide-react';
+import Link from 'next/link';
 
 function getYouTubeId(url: string) {
   if (!url) return null;
@@ -30,6 +31,17 @@ export default function AnimeDetailPage() {
   const router = useRouter();
   const { animeList, updateUserData, removeFromLibrary } = useAnimeData();
   const anime = animeList.find((a) => a.id === id);
+  const reducedMotion = useReducedMotion();
+  const [isLeaving, setIsLeaving] = useState(false);
+
+  const handleBack = () => {
+    if (reducedMotion) {
+      router.back();
+      return;
+    }
+    setIsLeaving(true);
+    window.setTimeout(() => router.back(), 300);
+  };
 
 
   const rating = anime?.userData?.rating || 0;
@@ -64,11 +76,11 @@ export default function AnimeDetailPage() {
   const videoId = getYouTubeId(anime.pv_url);
 
   return (
-    <div className="m3-page">
-      <button type="button" onClick={() => router.back()} style={{ marginBottom: '24px', padding: '9px 14px', background: 'var(--surface-container)', color: 'var(--on-surface)', border: '1px solid var(--outline)', borderRadius: '999px', cursor: 'pointer', fontWeight: 'bold' }}>← 一覧に戻る</button>
+    <motion.div className="m3-page" initial={reducedMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: isLeaving ? 0 : 1, y: isLeaving ? -8 : 0 }} transition={{ duration: reducedMotion ? 0 : .3, ease: 'easeOut' }}>
+      <button type="button" onClick={handleBack} style={{ marginBottom: '24px', padding: '9px 14px', background: 'var(--surface-container)', color: 'var(--on-surface)', border: '1px solid var(--outline)', borderRadius: '999px', cursor: 'pointer', fontWeight: 'bold' }}>← 一覧に戻る</button>
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(320px, .9fr)', gap: '48px', marginBottom: '48px' }}>
         {/* Left: Info */}
-        <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: reducedMotion ? 0 : .3, ease: 'easeOut' }}>
           <h1 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '16px' }}>{anime.title}</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
             {anime.season && <div style={{ fontSize: '16px', color: '#6750a4', fontWeight: 'bold' }}>{anime.season}</div>}
@@ -94,7 +106,7 @@ export default function AnimeDetailPage() {
                       style={{
                         padding: '8px 16px', background: s.id === anime.id ? '#6750a4' : '#f7f2fa',
                         color: s.id === anime.id ? '#fff' : '#1d1b20', border: s.id === anime.id ? 'none' : '1px solid #79747e',
-                        borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s'
+                        borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', transition: 'transform .3s ease, opacity .3s ease'
                       }}
                     >
                       {s.season ? `${s.season} ` : ''}({suffix})
@@ -111,7 +123,12 @@ export default function AnimeDetailPage() {
 
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '32px' }}>
             {anime.tags.map((tag) => (
-              <span key={tag} style={{ padding: '6px 16px', border: '1px solid #79747e', borderRadius: '20px', fontSize: '13px', color: '#49454f', background: '#f7f2fa' }}>#{tag}</span>
+              <Link
+                key={tag}
+                href={`/anime?tag=${encodeURIComponent(tag)}`}
+                aria-label={`${tag}タグで作品を検索`}
+                style={{ padding: '6px 16px', border: '1px solid #79747e', borderRadius: '20px', fontSize: '13px', color: '#49454f', background: '#f7f2fa', textDecoration: 'none' }}
+              >#{tag}</Link>
             ))}
           </div>
 
@@ -123,23 +140,17 @@ export default function AnimeDetailPage() {
           <div style={{ marginBottom: '24px' }}>
             <div style={{ fontSize: '12px', color: '#49454f', marginBottom: '8px' }}>視聴状態</div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {(['見たい', '視聴中', '完了', '保留', '視聴切り'] as AnimeStatus[]).map((s) => {
-                const colors: Record<string, string> = {
-                  '見たい': '#6366f1',
-                  '視聴中': '#3b82f6',
-                  '完了': '#22c55e',
-                  '保留': '#f59e0b',
-                  '視聴切り': '#ef4444',
-                };
+              {ANIME_STATUS_OPTIONS.map((s) => {
+                const statusStyle = ANIME_STATUS_STYLES[s];
                 const isActive = anime.userData?.status === s;
                 return (
-                  <button key={s} onClick={() => updateUserData(anime.id, { status: s })}
+                  <motion.button key={s} onClick={() => updateUserData(anime.id, { status: s })} animate={{ scale: isActive ? 1.03 : 1 }} transition={{ duration: reducedMotion ? 0 : .3, ease: 'easeOut' }}
                     style={{
-                      padding: '8px 18px', borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s',
-                      background: isActive ? colors[s] : '#e7e0ec',
-                      color: isActive ? '#fff' : '#1d1b20',
+                      position: 'relative', overflow: 'hidden', isolation: 'isolate', padding: '8px 18px', borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer',
+                      background: '#e7e0ec',
+                      color: isActive ? statusStyle.color : '#1d1b20',
                     }}
-                  >{s}</button>
+                  ><span className="status-choice-color" style={{ position: 'absolute', inset: 0, zIndex: -1, background: statusStyle.background, opacity: isActive ? 1 : 0, transition: reducedMotion ? 'none' : 'opacity .3s ease' }} /><span style={{ position: 'relative', zIndex: 1 }}>{s}</span></motion.button>
                 );
               })}
             </div>
@@ -172,7 +183,7 @@ export default function AnimeDetailPage() {
         </motion.div>
 
         {/* Right: Media */}
-        <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+        <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: reducedMotion ? 0 : .3, ease: 'easeOut' }}>
           <div style={{ aspectRatio: '16/9', background: '#f3edf7', borderRadius: '24px', overflow: 'hidden', position: 'relative' }}>
             {videoId ? (
               <iframe
@@ -191,7 +202,7 @@ export default function AnimeDetailPage() {
 
           <div style={{ marginTop: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', padding: '0 8px' }}>
              <div><div style={{ fontSize: '11px', color: '#49454f', marginBottom: '4px' }}>放送時期</div><div style={{ fontSize: '14px', color: '#1d1b20' }}>{anime.season || '不明'}</div></div>
-             <div><div style={{ fontSize: '11px', color: '#49454f', marginBottom: '4px' }}>話数</div><div style={{ fontSize: '14px', color: '#1d1b20' }}>全 {anime.total_episodes || '??'} 話</div></div>
+             <div><div style={{ fontSize: '11px', color: '#49454f', marginBottom: '4px' }}>話数</div><div style={{ fontSize: '14px', color: '#1d1b20' }}>{anime.total_episodes > 0 ? `全${anime.total_episodes}話` : '話数不明'}</div></div>
 
              {anime.official_site && (
                <div style={{ gridColumn: 'span 2' }}>
@@ -212,7 +223,7 @@ export default function AnimeDetailPage() {
       </div>
 
       {similar.length > 0 && (
-        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : .3, ease: 'easeOut', delay: reducedMotion ? 0 : .3 }}>
           <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '24px', color: '#6750a4', paddingBottom: '8px', borderBottom: '1px solid #cac4d0' }}>
             この作品を見た人におすすめ
           </h2>
@@ -223,6 +234,6 @@ export default function AnimeDetailPage() {
           </div>
         </motion.section>
       )}
-    </div>
+    </motion.div>
   );
 }

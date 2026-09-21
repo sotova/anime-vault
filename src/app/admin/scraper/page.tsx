@@ -28,6 +28,7 @@ export default function ScraperPage() {
         const excelData = data.animeList.map((a: Anime) => ({
           'タイトル': a.title,
           '放送季': a.season,
+          '話数': a.total_episodes,
           'あらすじ': a.synopsis,
           '画像URL': a.image_url,
           '公式サイト': a.official_site,
